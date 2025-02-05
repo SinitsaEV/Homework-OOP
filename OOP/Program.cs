@@ -17,22 +17,22 @@ namespace OOP
 
     class Player
     {
-        private int id;
-        private string name;
-        private string description;
+        private int _id;
+        private string _name;
+        private string _description;
 
         public Player(int id, string name, string description)
         {
-            this.id = id;
-            this.name = name;
-            this.description = description;
+            _id = id;
+            _name = name;
+            _description = description;
         }
 
         public void ShowInformation()
         {
-            Console.WriteLine( " ID: " + id);
-            Console.WriteLine(" NAME: " + name);
-            Console.WriteLine(" DESCRIPTION: " + description);
+            Console.WriteLine( " ID: " + _id);
+            Console.WriteLine(" NAME: " + _name);
+            Console.WriteLine(" DESCRIPTION: " + _description);
         }
     }
 }
