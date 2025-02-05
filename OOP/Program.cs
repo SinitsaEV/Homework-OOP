@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace OOP
 {
@@ -10,33 +6,36 @@ namespace OOP
     {
         static void Main(string[] args)
         {
-            int id = 1;
-            string name = "Sinitsa";
-            string description = "Student";
+            int playerPositionX = 25;
+            int playerPositionY = 10;
+            char playerSymbol = '@';
 
-            Player player = new Player(id, name, description);
-            player.ShowInformation();
+            Player player = new Player(playerPositionX, playerPositionY, playerSymbol);
+            Renderer renderer = new Renderer();
+            renderer.DrawPlayer(player);
         }
     }
 
     class Player
     {
-        private int id;
-        private string name;
-        private string description;
+        public int PositionX { get; }
+        public int PositionY { get; }
+        public char Symbol { get; }
 
-        public Player(int id, string name, string description)
+        public Player(int positionX, int positionY, char symbol)
         {
-            this.id = id;
-            this.name = name;
-            this.description = description;
-        }
+            PositionX = positionX;
+            PositionY = positionY;
+            Symbol = symbol;
+        }       
+    }
 
-        public void ShowInformation()
+    class Renderer
+    {
+        public void DrawPlayer(Player player)
         {
-            Console.WriteLine( " ID: " + id);
-            Console.WriteLine(" NAME: " + name);
-            Console.WriteLine(" DESCRIPTION: " + description);
+            Console.SetCursorPosition(player.PositionX, player.PositionY);
+            Console.Write(player.Symbol);
         }
     }
 }
