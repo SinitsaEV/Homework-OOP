@@ -138,6 +138,7 @@ namespace OOP
         {
             _players = new List<Player>();
         }
+        
         private int GetNewPlayerId()
         {
             int id = 0;
