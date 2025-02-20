@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using OOP;
 
 namespace OOP
 {
@@ -70,23 +71,25 @@ namespace OOP
     }
 
     class Player
-    {        
+    {
+        private int _id;
         public Player(int id, string nickname, int level, bool isBanned)
         {
-            Id = id;
+            _id = id;
             Nickname = nickname;
             Level = level;
             IsBanned = isBanned;
         }
-
-        public int Id { set; get; }
+                
         public string Nickname { set; get; }
         public int Level { set; get; }
         public bool IsBanned { set; get; }
+
+        public int GetId => _id;
                
         public void ShowInformation()
         {
-            Console.WriteLine(" ID: " + Id);
+            Console.WriteLine(" ID: " + _id);
             Console.WriteLine(" NICKNAME: " + Nickname);
             Console.WriteLine(" LEVEL: " + Level);
             Console.WriteLine(" BAN: " + IsBanned);
@@ -104,10 +107,9 @@ namespace OOP
 
         public void BanPlayer()
         {
-            int id = ReadPlayerId();
-            Player player = GetPlayerById(id);
+            Player player;
 
-            if (player != null)
+            if (TryGetPlayer(out player))
                 player.IsBanned = true;
             else
                 Console.WriteLine("Неверный ID.");
@@ -115,10 +117,9 @@ namespace OOP
 
         public void DisbanPlayer()
         {
-            int id = ReadPlayerId();
-            Player player = GetPlayerById(id);
+            Player player;
 
-            if (player != null)
+            if (TryGetPlayer(out player))
                 player.IsBanned = false;
             else
                 Console.WriteLine("Неверный ID.");
@@ -133,10 +134,9 @@ namespace OOP
 
         public void RemovePlayer()
         {
-            int id = ReadPlayerId();
-            Player player = GetPlayerById(id);
+            Player player;
 
-            if (player != null)
+            if(TryGetPlayer(out player))
                 _players.Remove(player);
             else
                 Console.WriteLine("Неверный ID.");
@@ -218,7 +218,7 @@ namespace OOP
 
             foreach (Player player in _players)
             {
-                if (player.Id == id)
+                if (player.GetId == id)
                 {
                     isIdExists = true;
                     break;
@@ -227,18 +227,22 @@ namespace OOP
 
             return isIdExists;
         }
-
-        private Player GetPlayerById(int id)
+        
+        private bool TryGetPlayer(out Player player)
         {
-            foreach (Player player in _players)
+            int id = ReadPlayerId();
+
+            foreach (Player playerInList in _players)
             {
-                if (player.Id == id)
+                if (playerInList.GetId == id)
                 {
-                    return player;
+                    player = playerInList;
+                    return true;
                 }
             }
 
-            return null;
-        }        
+            player = null;
+            return false;
+        }
     }
 }
