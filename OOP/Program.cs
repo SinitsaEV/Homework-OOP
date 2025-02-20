@@ -71,28 +71,31 @@ namespace OOP
     }
 
     class Player
-    {
-        private int _id;
+    {        
         public Player(int id, string nickname, int level, bool isBanned)
         {
-            _id = id;
+            Id = id;
             Nickname = nickname;
             Level = level;
             IsBanned = isBanned;
         }
                 
-        public string Nickname { set; get; }
-        public int Level { set; get; }
-        public bool IsBanned { set; get; }
+        public string Nickname {private set; get; }
+        public int Level {private set; get; }
+        public bool IsBanned { private set; get; }
+        public int Id { private set; get; }
 
-        public int GetId => _id;
-               
         public void ShowInformation()
         {
-            Console.WriteLine(" ID: " + _id);
+            Console.WriteLine(" ID: " + Id);
             Console.WriteLine(" NICKNAME: " + Nickname);
             Console.WriteLine(" LEVEL: " + Level);
             Console.WriteLine(" BAN: " + IsBanned);
+        }
+
+        public void SetIsBanned(bool isBanned)
+        {
+            IsBanned = isBanned;
         }
     }
 
@@ -110,7 +113,7 @@ namespace OOP
             Player player;
 
             if (TryGetPlayer(out player))
-                player.IsBanned = true;
+                player.SetIsBanned(true);
             else
                 Console.WriteLine("Неверный ID.");
         }
@@ -120,7 +123,7 @@ namespace OOP
             Player player;
 
             if (TryGetPlayer(out player))
-                player.IsBanned = false;
+                player.SetIsBanned(false);
             else
                 Console.WriteLine("Неверный ID.");
         }
@@ -218,7 +221,7 @@ namespace OOP
 
             foreach (Player player in _players)
             {
-                if (player.GetId == id)
+                if (player.Id == id)
                 {
                     isIdExists = true;
                     break;
@@ -234,7 +237,7 @@ namespace OOP
 
             foreach (Player playerInList in _players)
             {
-                if (playerInList.GetId == id)
+                if (playerInList.Id == id)
                 {
                     player = playerInList;
                     return true;
