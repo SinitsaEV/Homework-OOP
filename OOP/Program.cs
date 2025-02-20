@@ -93,9 +93,14 @@ namespace OOP
             Console.WriteLine(" BAN: " + IsBanned);
         }
 
-        public void SetIsBanned(bool isBanned)
+        public void Ban()
         {
-            IsBanned = isBanned;
+            IsBanned = true;
+        }
+
+        public void Disban()
+        {
+            IsBanned = true;
         }
     }
 
@@ -113,7 +118,7 @@ namespace OOP
             Player player;
 
             if (TryGetPlayer(out player))
-                player.SetIsBanned(true);
+                player.Ban();
             else
                 Console.WriteLine("Неверный ID.");
         }
@@ -123,7 +128,7 @@ namespace OOP
             Player player;
 
             if (TryGetPlayer(out player))
-                player.SetIsBanned(false);
+                player.Disban();
             else
                 Console.WriteLine("Неверный ID.");
         }
