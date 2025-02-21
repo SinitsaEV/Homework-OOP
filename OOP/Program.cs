@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -13,56 +13,51 @@ namespace OOP
             Deck pokerDeck = creator.Create();
             Dealer dealer = new Dealer(pokerDeck, player);
             Console.OutputEncoding = Encoding.Unicode;
-            dealer.StartGame();
+            dealer.RunGame();
         }
 
-        abstract class DeckCreator
+        class PokerDeckCreator 
         {
-            public abstract Deck Create();
-        }
-
-        class PokerDeckCreator : DeckCreator 
-        {
-            public override Deck Create()
-            {   
+            public  Deck Create()
+            {
                 List<Card> cards = new List<Card>();
 
                 foreach (CardSuit suit in Enum.GetValues(typeof(CardSuit)))
                 {
-                    foreach(CardValue value in Enum.GetValues(typeof(CardValue)))
+                    foreach (CardValue value in Enum.GetValues(typeof(CardValue)))
                     {
                         Card card = new Card(suit, value);
-                        cards.Add(card);                        
+                        cards.Add(card);
                     }
                 }
 
                 return new Deck(cards);
-            }                        
+            }
         }
 
         private enum CardSuit
         {
-            Hearts,    // Черви
-            Diamonds,  // Бубны
-            Clubs,     // Трефы
-            Spades     // Пики
+            Hearts,    
+            Diamonds,  
+            Clubs,   
+            Spades 
         }
 
         private enum CardValue
         {
-            Ace = 1,    // Туз
-            Two = 2,    // Два
-            Three = 3,  // Три
-            Four = 4,   // Четыре
-            Five = 5,   // Пять
-            Six = 6,    // Шесть
-            Seven = 7,  // Семь
-            Eight = 8,  // Восемь
-            Nine = 9,   // Девять
-            Ten = 10,   // Десятка
-            Jack = 11,  // Валет
-            Queen = 12, // Дама
-            King = 13   // Король
+            Ace = 1,    
+            Two = 2,  
+            Three = 3,
+            Four = 4,  
+            Five = 5,
+            Six = 6,   
+            Seven = 7,  
+            Eight = 8,  
+            Nine = 9, 
+            Ten = 10,   
+            Jack = 11,
+            Queen = 12, 
+            King = 13   
         }
 
         class Card
@@ -91,9 +86,11 @@ namespace OOP
                 _cards = cards;
             }
 
+            public int DeckCount => _cards.Count;
+
             public void Show()
             {
-                foreach ( Card card in _cards )
+                foreach (Card card in _cards)
                     card.Show();
             }
 
@@ -110,15 +107,13 @@ namespace OOP
                 }
             }
 
-            public List<Card> GetCards(int count)
+            public List<Card> DrawCards(int count)
             {
                 List<Card> cards = _cards.GetRange(0, count);
                 _cards.RemoveRange(0, count);
                 return cards;
-            }
-
-            public int GetCount => _cards.Count;
-        }              
+            }            
+        }
 
         class Player
         {
@@ -130,7 +125,7 @@ namespace OOP
                 _cards = new List<Card>();
             }
 
-            public string Name { get; set; }
+            public string Name { get; private set; }
 
             public void ShowCards()
             {
@@ -155,6 +150,15 @@ namespace OOP
                 _player = player;
             }
 
+            public void RunGame()
+            {
+                _desk.Shuffle();
+                int desiredCards = ReadCardsNumber();
+                _player.TakeCards(_desk.DrawCards(desiredCards));
+                Console.WriteLine(_player.Name);
+                _player.ShowCards();
+            }
+
             private int ReadCardsNumber()
             {
                 bool isCorrectInput = false;
@@ -165,10 +169,10 @@ namespace OOP
                     Console.Write("Ведите число карт для раздачи: ");
                     string input = Console.ReadLine();
 
-                    if (IsCorrectCardsNumber(input,out cardsNumber))
+                    if (IsCorrectCardsNumber(input, out cardsNumber))
                     {
                         isCorrectInput = true;
-                    }                    
+                    }
                 }
 
                 return cardsNumber;
@@ -178,28 +182,12 @@ namespace OOP
             {
                 if (int.TryParse(input, out cardsNumber) == true)
                 {
-                    if (cardsNumber > 0 && cardsNumber <= _desk.GetCount)
-                    {
-                        return true;
-                    }
-                    else
-                    {
-                        return false;
-                    }
+                    return cardsNumber > 0 && cardsNumber <= _desk.DeckCount;
                 }
                 else
                 {
                     return false;
                 }
-            }
-
-            public void StartGame()
-            {
-                _desk.Shuffle();
-                int desiredCards = ReadCardsNumber();
-                _player.TakeCards(_desk.GetCards(desiredCards));
-                Console.WriteLine(_player.Name);
-                _player.ShowCards();
             }
         }
     }
