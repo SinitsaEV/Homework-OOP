@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace OOP
@@ -8,198 +9,348 @@ namespace OOP
     {
         static void Main(string[] args)
         {
-            Player player = new Player("Евгений");
-            PokerDeckCreator creator = new PokerDeckCreator();
-            Deck pokerDeck = creator.Create();
-            Dealer dealer = new Dealer(pokerDeck, player);
+            Console.InputEncoding = Encoding.Unicode;
             Console.OutputEncoding = Encoding.Unicode;
-            dealer.StartGame();
+
+            LibraryManager libraryManager = new LibraryManager();
+
+            libraryManager.InitLibrary();
         }
 
-        abstract class DeckCreator
+        class Library
         {
-            public abstract Deck Create();
-        }
+            private List<Book> _books;
 
-        class PokerDeckCreator : DeckCreator 
-        {
-            public override Deck Create()
-            {   
-                List<Card> cards = new List<Card>();
-
-                foreach (CardSuit suit in Enum.GetValues(typeof(CardSuit)))
-                {
-                    foreach(CardValue value in Enum.GetValues(typeof(CardValue)))
-                    {
-                        Card card = new Card(suit, value);
-                        cards.Add(card);                        
-                    }
-                }
-
-                return new Deck(cards);
-            }                        
-        }
-
-        private enum CardSuit
-        {
-            Hearts,    // Черви
-            Diamonds,  // Бубны
-            Clubs,     // Трефы
-            Spades     // Пики
-        }
-
-        private enum CardValue
-        {
-            Ace = 1,    // Туз
-            Two = 2,    // Два
-            Three = 3,  // Три
-            Four = 4,   // Четыре
-            Five = 5,   // Пять
-            Six = 6,    // Шесть
-            Seven = 7,  // Семь
-            Eight = 8,  // Восемь
-            Nine = 9,   // Девять
-            Ten = 10,   // Десятка
-            Jack = 11,  // Валет
-            Queen = 12, // Дама
-            King = 13   // Король
-        }
-
-        class Card
-        {
-            private CardSuit _suit;
-            private CardValue _value;
-
-            public Card(CardSuit suit, CardValue value)
+            public Library(List<Book> books)
             {
-                _suit = suit;
-                _value = value;
-            }
+                _books = books;
+            } 
 
             public void Show()
             {
-                Console.WriteLine($"{_value} - {_suit}");
-            }
-        }
-
-        class Deck
-        {
-            private List<Card> _cards;
-
-            public Deck(List<Card> cards)
-            {
-                _cards = cards;
-            }
-
-            public void Show()
-            {
-                foreach ( Card card in _cards )
-                    card.Show();
-            }
-
-            public void Shuffle()
-            {
-                Random random = new Random();
-
-                for (int i = 0; i < _cards.Count; i++)
+                foreach(Book book in _books)
                 {
-                    int randomIndex = random.Next(_cards.Count);
-                    Card buffer = _cards[i];
-                    _cards[i] = _cards[randomIndex];
-                    _cards[randomIndex] = buffer;
+                    book.Show();
                 }
             }
 
-            public List<Card> GetCards(int count)
+            public bool Add(Book book)
             {
-                List<Card> cards = _cards.GetRange(0, count);
-                _cards.RemoveRange(0, count);
-                return cards;
-            }
-
-            public int GetCount => _cards.Count;
-        }              
-
-        class Player
-        {
-            private List<Card> _cards;
-
-            public Player(string name)
-            {
-                Name = name;
-                _cards = new List<Card>();
-            }
-
-            public string Name { get; set; }
-
-            public void ShowCards()
-            {
-                foreach (Card card in _cards)
-                    card.Show();
-            }
-
-            public void TakeCards(List<Card> cards)
-            {
-                _cards.AddRange(cards);
-            }
-        }
-
-        class Dealer
-        {
-            private Deck _desk;
-            private Player _player;
-
-            public Dealer(Deck desk, Player player)
-            {
-                _desk = desk;
-                _player = player;
-            }
-
-            private int ReadCardsNumber()
-            {
-                bool isCorrectInput = false;
-                int cardsNumber = 0;
-
-                while (isCorrectInput == false)
+                if(book == null)
                 {
-                    Console.Write("Ведите число карт для раздачи: ");
-                    string input = Console.ReadLine();
-
-                    if (IsCorrectCardsNumber(input,out cardsNumber))
-                    {
-                        isCorrectInput = true;
-                    }                    
+                    return false;
                 }
 
-                return cardsNumber;
+                if(IsBookExists(ref book) == false)
+                {
+                    _books.Add(book);
+                    return true;
+                }
+
+                return false;
             }
 
-            private bool IsCorrectCardsNumber(string input, out int cardsNumber)
-            {
-                if (int.TryParse(input, out cardsNumber) == true)
+            public bool Remote(Book book)
+            {                
+                if(IsBookExists(ref book))
                 {
-                    if (cardsNumber > 0 && cardsNumber <= _desk.GetCount)
+                    _books.Remove(book);
+                    return true;
+                }
+
+                return false;
+            }
+
+            public bool TryGetFilterBooks(Func<Book, bool> predicate, out List<Book> filteredBooks)
+            {
+                filteredBooks = _books.Where(predicate).ToList();
+
+                return filteredBooks.Count > 0;
+            }
+
+            private bool IsBookExists(ref Book book)
+            {
+                foreach (Book _book in _books)
+                {
+                    if (_book.Equals(book))
                     {
+                        book = _book;
                         return true;
                     }
-                    else
+                }
+
+                return false;
+            }
+        }
+
+        class LibraryCreator
+        {
+            public Library Create()
+            {
+                List<Book> books = new List<Book>();
+                books.Add(new Book("Война и мир", new Author("Толстой", "Лев", "Николаевич"), 1868));
+                books.Add(new Book("Мастер и Маргарита", new Author("Булгаков", "Михаил", "Афанасьевич"), 1966));
+                books.Add(new Book("Преступление и наказание", new Author("Достоевский", "Фёдор", "Михайлович"), 1866));
+                books.Add(new Book("Мертвые души", new Author("Гоголь", "Николай", "Васильевич"), 1842));
+                books.Add(new Book("Капитанская дочка", new Author("Пушкин", "Александр", "Сергеевич"), 1836));
+                books.Add(new Book("Муму", new Author("Тургенев", "Иван", "Сергеевич"), 1854));
+                books.Add(new Book("Евгений Онегин", new Author("Пушкин", "Александр", "Сергеевич"), 1831));
+                books.Add(new Book("Ревизор ", new Author("Гоголь", "Николай", "Васильевич"), 1836));
+                books.Add(new Book("А зори здесь тихие…", new Author("Васильев", "Борис", "Львович"), 1969));
+                books.Add(new Book("Тихий дон", new Author("Шолохов", "Михаил", "Александрович"), 1928));
+                Library library = new Library(books);
+
+                return library;
+            }
+        }
+
+        class Book
+        {
+            public Book(string title, Author author, int releaseYear)
+            {
+                Title = title;
+                Author = author;
+                ReleaseYear = releaseYear;
+            }
+
+            public string Title { get; private set; }
+            public Author Author { get; private set; }
+            public int ReleaseYear { get; private set; }
+
+            public void Show()
+            {
+                Console.WriteLine($" Название: {Title}");
+                Console.Write($" Автор: ");
+                Author.Show();
+                Console.WriteLine($" Год релиза: {ReleaseYear} \n");
+            }
+
+            public override bool Equals(object obj)
+            {
+                if (obj == null) return false;
+
+                if(obj is Book other)
+                {
+                    return other.Title == Title && other.ReleaseYear == ReleaseYear && other.Author.Equals(Author);
+                }
+
+                return false;
+            }
+        }
+
+        class Author
+        {
+            public Author(string lastName, string firstName, string patronymic)
+            {
+                LastName = lastName;
+                FirstName = firstName;
+                Patronymic = patronymic;
+            }
+
+            public string LastName { get; private set; }
+            public string FirstName { get; private set; }
+            public string Patronymic { get; private set; }
+
+            public void Show()
+            {
+                Console.WriteLine($"{LastName} {FirstName} {Patronymic}");
+            }
+
+            public override bool Equals(object obj)
+            {
+                if (obj == null)
+                {
+                    return false;
+                }
+
+                if (obj is Author other)
+                {
+                    return other.LastName == LastName && other.FirstName == FirstName && other.Patronymic == Patronymic;
+                }
+
+                return false;
+            }
+        }
+
+        class LibraryManager
+        {
+            const string AddCommand = "1";
+            const string RemoteCommand = "2";            
+            const string FilterByYearCommand = "3";
+            const string FilterByTitleCommand = "4";
+            const string FilterByAutorCommand = "5";
+            const string ShowCommand = "6";
+            const string ExitCommand = "7";
+
+            private Library _library;
+
+            public LibraryManager()
+            {
+                LibraryCreator libraryCreator = new LibraryCreator();
+                _library = libraryCreator.Create();
+            }
+
+            public void InitLibrary()
+            {
+                bool isActive = true;
+
+                while (isActive)
+                {                    
+                    Console.WriteLine($"" +
+                        $"{AddCommand} - добавить книгу\n" +
+                        $"{RemoteCommand} - удалить книгу\n" +
+                        $"{FilterByYearCommand} - фильтр по году\n" +
+                        $"{FilterByTitleCommand} - фильтр по названию\n" +
+                        $"{FilterByAutorCommand} - фильтр по автору\n" +
+                        $"{ShowCommand} - показать все книги\n" +
+                        $"{ExitCommand} - выход");
+                    string playerInput = Console.ReadLine();
+
+                    switch (playerInput)
                     {
-                        return false;
+                        case AddCommand:
+                            AddBook();
+                            break;
+
+                        case RemoteCommand:
+                            RemoteBook();
+                            break;
+
+                        case FilterByYearCommand:
+                            FilterByYear();
+                            break;
+
+                        case FilterByTitleCommand:
+                            FilterByTitle();
+                            break;
+                        case FilterByAutorCommand:
+                            FilterByAuthor();
+                            break;
+
+                        case ShowCommand:
+                            _library.Show();
+                            break;
+
+                        case ExitCommand:
+                            isActive = false;
+                            Console.WriteLine("Вы вышли.");
+                            break;
+
+                        default:
+                            Console.WriteLine("Неверный ввод.");
+                            break;
+                    }
+                }
+            }
+
+            private void AddBook()
+            {
+
+
+                if (_library.Add(ReadBook()))
+                {
+                    Console.WriteLine("Книга добавлена.");
+                }
+            }
+
+            private Book ReadBook()
+            {
+                Author author = ReadAuthor();
+                string title = ReadString("Введите название книги: ");
+                int releaseYear = ReadYear();
+
+                return new Book(title, author, releaseYear);
+            }
+
+            private Author ReadAuthor()
+            {                
+                string lastName = ReadString("Введите фамилию автора: ");
+                string firstName = ReadString("Введите имя автора: ");
+                string patronymic = ReadString("Введите отчество автора: ");
+
+                return new Author(lastName, firstName, patronymic); 
+            }
+
+            private string ReadString(string massage)
+            {
+                Console.Write(massage);
+                return Console.ReadLine();
+            }
+
+            private int ReadYear()
+            {
+                int releaseYear = 0;
+                Console.Write("Введите год релиза: ");
+
+                while (int.TryParse(Console.ReadLine(), out releaseYear) == false || releaseYear < 0)
+                {
+                    Console.WriteLine(" Неверный ввод. Попробуйте снова. ");
+                }
+
+                return releaseYear;
+            }
+
+            private void RemoteBook()
+            {
+                if(_library.Remote(ReadBook()))
+                {
+                    Console.WriteLine("Книга удалена.");
+                }
+                else
+                {
+                    Console.WriteLine("Такой книги нет в библиотеке.");
+                }
+            }
+
+            private void FilterByYear()
+            {                
+                int year = ReadYear();
+
+                if(_library.TryGetFilterBooks(b => b.ReleaseYear == year, out List<Book> books))
+                {
+                    foreach (Book book in books)
+                    {
+                        book.Show();
                     }
                 }
                 else
                 {
-                    return false;
-                }
+                    Console.WriteLine("Книги не найдены.");
+                }                
             }
 
-            public void StartGame()
+            private void FilterByTitle()
             {
-                _desk.Shuffle();
-                int desiredCards = ReadCardsNumber();
-                _player.TakeCards(_desk.GetCards(desiredCards));
-                Console.WriteLine(_player.Name);
-                _player.ShowCards();
+                string title = ReadString("Введите название книги: ");
+
+                if (_library.TryGetFilterBooks(b => b.Title == title, out List<Book> books))
+                {
+                    foreach (Book book in books)
+                    {
+                        book.Show();
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Книги не найдены.");
+                }
+            }            
+
+            private void FilterByAuthor()
+            {
+                string lastName = ReadString("Введите фамилию автора: ");
+
+                if (_library.TryGetFilterBooks(b => b.Author.LastName == lastName, out List<Book> books))
+                {
+                    foreach (Book book in books)
+                    {
+                        book.Show();
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Книги не найдены.");
+                }
             }
         }
     }
