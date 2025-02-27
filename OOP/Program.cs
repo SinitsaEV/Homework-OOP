@@ -15,9 +15,7 @@ namespace OOP
             LibraryManager libraryManager = new LibraryManager();
 
             libraryManager.InitLibrary();
-        }
-
-        
+        }        
     }
 
     class Library
