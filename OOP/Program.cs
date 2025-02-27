@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -70,15 +70,15 @@ namespace OOP
 
             private bool IsBookExists(ref Book book)
             {
-                foreach (Book _book in _books)
+                foreach (Book currentBook in _books)
                 {
-                    if (_book.Equals(book))
+                    if (currentBook.Equals(book))
                     {
-                        book = _book;
+                        book = currentBook;
                         return true;
                     }
                 }
-
+                
                 return false;
             }
         }
