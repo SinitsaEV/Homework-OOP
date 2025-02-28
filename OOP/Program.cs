@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 
 namespace OOP
@@ -9,348 +8,205 @@ namespace OOP
     {
         static void Main(string[] args)
         {
-            Console.InputEncoding = Encoding.Unicode;
             Console.OutputEncoding = Encoding.Unicode;
+            Console.InputEncoding = Encoding.Unicode;
 
-            LibraryManager libraryManager = new LibraryManager();
+            SellerCreator creator = new SellerCreator();
+            Store store = new Store(creator.Create(), new Buyer("Евгений", 100), "Свежие фрукты");
+            store.Open();
+        }
+    }
 
-            libraryManager.InitLibrary();
+    class SellerCreator
+    {
+        public Seller Create()
+        {
+            List<Product> products = new List<Product>();
+            products.Add(new Product("Яблоко", 100, "Россия"));
+            products.Add(new Product("Банан", 192, "Эквадор"));
+            products.Add(new Product("Виноград", 95, "Испания"));
+            products.Add(new Product("Мандарин", 52, "Турция"));
+            products.Add(new Product("Апельсин", 79, "Турция"));
+            products.Add(new Product("Груша", 30, "Беларусь"));
+
+            return new Seller("Игорь", 0, products);
+        }
+    }
+
+    class Product
+    {
+        public Product(string name, int price, string description)
+        {
+            Name = name;
+            Price = price;
+            Description = description;
         }
 
-        class Library
+        public string Name { get; private set; }
+        public string Description { get; private set; }
+        public int Price { get; private set; }
+
+        public void Show()
         {
-            private List<Book> _books;
+            Console.WriteLine(Name + " " + Price);
+            Console.WriteLine(Description);
+        }
+    }
+    abstract class Person
+    {
+        protected List<Product> _products;
 
-            public Library(List<Book> books)
-            {
-                _books = books;
-            } 
+        public Person(List<Product> products,int money, string name)
+        {
+            _products = products;
+            Name = name;
+            Money = money;
+        }
 
-            public void Show()
+        public string Name { get; protected set; }
+        public int Money {  get; protected set; }
+
+        public void AddProduct(Product product)
+        {
+            _products.Add(product);
+        }
+
+        public void ShowProducts()
+        {
+            foreach (Product product in _products)
             {
-                foreach(Book book in _books)
-                {
-                    book.Show();
-                }
+                product.Show();
+                Console.WriteLine();
             }
+        }
+    }
 
-            public bool Add(Book book)
+    class Seller : Person
+    {
+        public Seller(string name,int money, List<Product> products) : base(products,money, name) { }
+        
+        public bool SellProduct(string productName, Buyer buyer)
+        {
+            if (TryGetProduct(productName, out Product product) == true)
             {
-                if(book == null)
+                if (buyer.TryBuyProduct(product))
                 {
-                    return false;
-                }
-
-                if(IsBookExists(ref book) == false)
-                {
-                    _books.Add(book);
+                    _products.Remove(product);
+                    Money += product.Price;
                     return true;
                 }
-
-                return false;
             }
 
-            public bool Remote(Book book)
-            {                
-                if(IsBookExists(ref book))
+            return false;
+        }
+
+        private bool TryGetProduct(string productName, out Product product)
+        {
+            foreach(Product currentProduct in _products)
+            {
+                if(currentProduct.Name == productName)
                 {
-                    _books.Remove(book);
+                    product = currentProduct;
                     return true;
                 }
-
-                return false;
             }
 
-            public bool TryGetFilterBooks(Func<Book, bool> predicate, out List<Book> filteredBooks)
+            product = null;
+            return false;
+        }
+    }
+
+    class Buyer : Person
+    {
+        public Buyer(string name, int money) : base(new List<Product>(), money, name) { }
+
+        public bool TryBuyProduct(Product product)
+        {
+            if(Money >= product.Price)
             {
-                filteredBooks = _books.Where(predicate).ToList();
-
-                return filteredBooks.Count > 0;
+                Money -= product.Price;
+                AddProduct(product);
+                return true;
             }
 
-            private bool IsBookExists(ref Book book)
-            {
-                foreach (Book _book in _books)
-                {
-                    if (_book.Equals(book))
-                    {
-                        book = _book;
-                        return true;
-                    }
-                }
+            return false;
+        }        
+    }
 
-                return false;
-            }
+    class Store
+    {
+        const string ShowProductsCommand = "1";
+        const string BuyCommand = "2";
+        const string ExitCommand = "3";
+
+
+        private Seller _seller;
+        private Buyer _buyer;
+
+        public Store(Seller seller, Buyer buyer, string name)
+        {
+            _seller = seller;
+            _buyer = buyer;
+            Name = name;
         }
 
-        class LibraryCreator
-        {
-            public Library Create()
-            {
-                List<Book> books = new List<Book>();
-                books.Add(new Book("Война и мир", new Author("Толстой", "Лев", "Николаевич"), 1868));
-                books.Add(new Book("Мастер и Маргарита", new Author("Булгаков", "Михаил", "Афанасьевич"), 1966));
-                books.Add(new Book("Преступление и наказание", new Author("Достоевский", "Фёдор", "Михайлович"), 1866));
-                books.Add(new Book("Мертвые души", new Author("Гоголь", "Николай", "Васильевич"), 1842));
-                books.Add(new Book("Капитанская дочка", new Author("Пушкин", "Александр", "Сергеевич"), 1836));
-                books.Add(new Book("Муму", new Author("Тургенев", "Иван", "Сергеевич"), 1854));
-                books.Add(new Book("Евгений Онегин", new Author("Пушкин", "Александр", "Сергеевич"), 1831));
-                books.Add(new Book("Ревизор ", new Author("Гоголь", "Николай", "Васильевич"), 1836));
-                books.Add(new Book("А зори здесь тихие…", new Author("Васильев", "Борис", "Львович"), 1969));
-                books.Add(new Book("Тихий дон", new Author("Шолохов", "Михаил", "Александрович"), 1928));
-                Library library = new Library(books);
+        public string Name { get; private set;}
 
-                return library;
+        public void Open()
+        {
+            Console.WriteLine($"{_buyer.Name} - Добро пожаловать в магазин {Name}");
+
+            bool isOpen = true;
+
+            while (isOpen)
+            {
+                Console.Clear();
+                Console.WriteLine($"{ShowProductsCommand} - показать товары\n" +
+                    $"{BuyCommand} - купить товар\n" +
+                    $"{ExitCommand} - выйти.");
+
+                string userInput = Console.ReadLine();
+
+                switch (userInput)
+                {
+                    case ShowProductsCommand:
+                        _seller.ShowProducts();
+                        break;
+
+                    case BuyCommand:
+                        Sell();
+                        break;
+
+                    case ExitCommand:
+                        Console.WriteLine("Вы вышли.");
+                        isOpen = false;
+                        break;
+
+                    default:
+                        Console.WriteLine("Неверный ввод.");
+                        break;
+                }
+
+                Console.ReadKey();
             }
+
+            Console.WriteLine("Ваши покупки: ");
+            _buyer.ShowProducts();
+            Console.WriteLine($"у вас осталось: {_buyer.Money} денег.");
         }
 
-        class Book
+        private void Sell()
         {
-            public Book(string title, Author author, int releaseYear)
+            Console.Write("Введите название товара: ");
+            string productName = Console.ReadLine();
+
+            if (_seller.SellProduct(productName, _buyer) == true)
             {
-                Title = title;
-                Author = author;
-                ReleaseYear = releaseYear;
+                Console.WriteLine($"Вы купили - {productName}");
             }
-
-            public string Title { get; private set; }
-            public Author Author { get; private set; }
-            public int ReleaseYear { get; private set; }
-
-            public void Show()
+            else
             {
-                Console.WriteLine($" Название: {Title}");
-                Console.Write($" Автор: ");
-                Author.Show();
-                Console.WriteLine($" Год релиза: {ReleaseYear} \n");
-            }
-
-            public override bool Equals(object obj)
-            {
-                if (obj == null) return false;
-
-                if(obj is Book other)
-                {
-                    return other.Title == Title && other.ReleaseYear == ReleaseYear && other.Author.Equals(Author);
-                }
-
-                return false;
-            }
-        }
-
-        class Author
-        {
-            public Author(string lastName, string firstName, string patronymic)
-            {
-                LastName = lastName;
-                FirstName = firstName;
-                Patronymic = patronymic;
-            }
-
-            public string LastName { get; private set; }
-            public string FirstName { get; private set; }
-            public string Patronymic { get; private set; }
-
-            public void Show()
-            {
-                Console.WriteLine($"{LastName} {FirstName} {Patronymic}");
-            }
-
-            public override bool Equals(object obj)
-            {
-                if (obj == null)
-                {
-                    return false;
-                }
-
-                if (obj is Author other)
-                {
-                    return other.LastName == LastName && other.FirstName == FirstName && other.Patronymic == Patronymic;
-                }
-
-                return false;
-            }
-        }
-
-        class LibraryManager
-        {
-            const string AddCommand = "1";
-            const string RemoteCommand = "2";            
-            const string FilterByYearCommand = "3";
-            const string FilterByTitleCommand = "4";
-            const string FilterByAutorCommand = "5";
-            const string ShowCommand = "6";
-            const string ExitCommand = "7";
-
-            private Library _library;
-
-            public LibraryManager()
-            {
-                LibraryCreator libraryCreator = new LibraryCreator();
-                _library = libraryCreator.Create();
-            }
-
-            public void InitLibrary()
-            {
-                bool isActive = true;
-
-                while (isActive)
-                {                    
-                    Console.WriteLine($"" +
-                        $"{AddCommand} - добавить книгу\n" +
-                        $"{RemoteCommand} - удалить книгу\n" +
-                        $"{FilterByYearCommand} - фильтр по году\n" +
-                        $"{FilterByTitleCommand} - фильтр по названию\n" +
-                        $"{FilterByAutorCommand} - фильтр по автору\n" +
-                        $"{ShowCommand} - показать все книги\n" +
-                        $"{ExitCommand} - выход");
-                    string playerInput = Console.ReadLine();
-
-                    switch (playerInput)
-                    {
-                        case AddCommand:
-                            AddBook();
-                            break;
-
-                        case RemoteCommand:
-                            RemoteBook();
-                            break;
-
-                        case FilterByYearCommand:
-                            FilterByYear();
-                            break;
-
-                        case FilterByTitleCommand:
-                            FilterByTitle();
-                            break;
-                        case FilterByAutorCommand:
-                            FilterByAuthor();
-                            break;
-
-                        case ShowCommand:
-                            _library.Show();
-                            break;
-
-                        case ExitCommand:
-                            isActive = false;
-                            Console.WriteLine("Вы вышли.");
-                            break;
-
-                        default:
-                            Console.WriteLine("Неверный ввод.");
-                            break;
-                    }
-                }
-            }
-
-            private void AddBook()
-            {
-
-
-                if (_library.Add(ReadBook()))
-                {
-                    Console.WriteLine("Книга добавлена.");
-                }
-            }
-
-            private Book ReadBook()
-            {
-                Author author = ReadAuthor();
-                string title = ReadString("Введите название книги: ");
-                int releaseYear = ReadYear();
-
-                return new Book(title, author, releaseYear);
-            }
-
-            private Author ReadAuthor()
-            {                
-                string lastName = ReadString("Введите фамилию автора: ");
-                string firstName = ReadString("Введите имя автора: ");
-                string patronymic = ReadString("Введите отчество автора: ");
-
-                return new Author(lastName, firstName, patronymic); 
-            }
-
-            private string ReadString(string massage)
-            {
-                Console.Write(massage);
-                return Console.ReadLine();
-            }
-
-            private int ReadYear()
-            {
-                int releaseYear = 0;
-                Console.Write("Введите год релиза: ");
-
-                while (int.TryParse(Console.ReadLine(), out releaseYear) == false || releaseYear < 0)
-                {
-                    Console.WriteLine(" Неверный ввод. Попробуйте снова. ");
-                }
-
-                return releaseYear;
-            }
-
-            private void RemoteBook()
-            {
-                if(_library.Remote(ReadBook()))
-                {
-                    Console.WriteLine("Книга удалена.");
-                }
-                else
-                {
-                    Console.WriteLine("Такой книги нет в библиотеке.");
-                }
-            }
-
-            private void FilterByYear()
-            {                
-                int year = ReadYear();
-
-                if(_library.TryGetFilterBooks(b => b.ReleaseYear == year, out List<Book> books))
-                {
-                    foreach (Book book in books)
-                    {
-                        book.Show();
-                    }
-                }
-                else
-                {
-                    Console.WriteLine("Книги не найдены.");
-                }                
-            }
-
-            private void FilterByTitle()
-            {
-                string title = ReadString("Введите название книги: ");
-
-                if (_library.TryGetFilterBooks(b => b.Title == title, out List<Book> books))
-                {
-                    foreach (Book book in books)
-                    {
-                        book.Show();
-                    }
-                }
-                else
-                {
-                    Console.WriteLine("Книги не найдены.");
-                }
-            }            
-
-            private void FilterByAuthor()
-            {
-                string lastName = ReadString("Введите фамилию автора: ");
-
-                if (_library.TryGetFilterBooks(b => b.Author.LastName == lastName, out List<Book> books))
-                {
-                    foreach (Book book in books)
-                    {
-                        book.Show();
-                    }
-                }
-                else
-                {
-                    Console.WriteLine("Книги не найдены.");
-                }
+                Console.WriteLine("Вы не смогли купить товар.");
             }
         }
     }
