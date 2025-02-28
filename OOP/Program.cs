@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.Security.Policy;
 using System.Text;
 
 namespace OOP
@@ -52,6 +53,7 @@ namespace OOP
             Console.WriteLine(Description);
         }
     }
+
     abstract class Person
     {
         protected List<Product> _products;
@@ -66,11 +68,6 @@ namespace OOP
         public string Name { get; protected set; }
         public int Money {  get; protected set; }
 
-        public void AddProduct(Product product)
-        {
-            _products.Add(product);
-        }
-
         public void ShowProducts()
         {
             foreach (Product product in _products)
@@ -79,28 +76,26 @@ namespace OOP
                 Console.WriteLine();
             }
         }
+
+        public void TakeMoney(int money)
+        {
+            Money += money;
+        }
     }
 
     class Seller : Person
     {
         public Seller(string name,int money, List<Product> products) : base(products,money, name) { }
-        
-        public bool SellProduct(string productName, Buyer buyer)
+       
+        public void RemoveProduct(Product product)
         {
-            if (TryGetProduct(productName, out Product product) == true)
+            if (_products.Contains(product))
             {
-                if (buyer.TryBuyProduct(product))
-                {
-                    _products.Remove(product);
-                    Money += product.Price;
-                    return true;
-                }
+                _products.Remove(product);
             }
-
-            return false;
         }
 
-        private bool TryGetProduct(string productName, out Product product)
+        public bool TryGetProduct(string productName, out Product product)
         {
             foreach(Product currentProduct in _products)
             {
@@ -130,7 +125,12 @@ namespace OOP
             }
 
             return false;
-        }        
+        }
+        
+        private void AddProduct(Product product)
+        {
+            _products.Add(product);
+        }
     }
 
     class Store
@@ -190,9 +190,9 @@ namespace OOP
                 Console.ReadKey();
             }
 
+            Console.WriteLine($"у вас осталось: {_buyer.Money} денег.");
             Console.WriteLine("Ваши покупки: ");
             _buyer.ShowProducts();
-            Console.WriteLine($"у вас осталось: {_buyer.Money} денег.");
         }
 
         private void Sell()
@@ -200,14 +200,23 @@ namespace OOP
             Console.Write("Введите название товара: ");
             string productName = Console.ReadLine();
 
-            if (_seller.SellProduct(productName, _buyer) == true)
+            if(_seller.TryGetProduct(productName,out Product product))
             {
-                Console.WriteLine($"Вы купили - {productName}");
+                if (_buyer.TryBuyProduct(product))
+                {
+                    _seller.RemoveProduct(product);
+                    _seller.TakeMoney(product.Price);
+                    Console.WriteLine($"{_buyer.Name} купил {product.Name}");
+                }
+                else
+                {
+                    Console.WriteLine("Недостаточно средств.");
+                }
             }
             else
             {
-                Console.WriteLine("Вы не смогли купить товар.");
-            }
+                Console.WriteLine("Продукта с таким названием нет в нашем магазине.");
+            }            
         }
     }
 }
