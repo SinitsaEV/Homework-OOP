@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -12,7 +12,7 @@ namespace OOP
             Console.InputEncoding = Encoding.Unicode;
 
             RussianRailways russianRailways = new RussianRailways(new Disparcher());
-            russianRailways.Menu();
+            russianRailways.ShowMenu();
         }
     }
 
@@ -21,10 +21,10 @@ namespace OOP
         private List<Carriage> _carriages;
         private Direction _direction;
 
-        public Train(Direction direction)
+        public Train(Direction direction, List<Carriage> carriages)
         {
             _direction = direction;
-            _carriages = new List<Carriage>();
+            _carriages = carriages;
         }
 
         public void Show()
@@ -34,15 +34,10 @@ namespace OOP
 
         public void ShowCarriagesInformation()
         {
-            foreach(Carriage carriage in _carriages)
+            foreach (Carriage carriage in _carriages)
             {
                 carriage.Show();
             }
-        }
-
-        public void AddCarriage(Carriage carriage)
-        {
-            _carriages.Add(carriage);
         }
     }
 
@@ -89,10 +84,6 @@ namespace OOP
 
     class Disparcher
     {
-        private const int maxCarriageСapacity = 200;
-        private const int minCarriageСapacity = 60;
-        private const int maxTrainСapacity = 1500;
-
         private List<Train> _trains;
 
         public Disparcher()
@@ -109,29 +100,32 @@ namespace OOP
         }
 
         public void CreateTrain()
-        {            
+        {
             Direction direction = CreateDirection();
-
-            Train train = new Train(direction);
 
             Random random = new Random();
 
             int passengerCount = SellTikets(random);
 
-            FormTrain(passengerCount, train, random);
+            Train train = new Train(direction, FormTrain(passengerCount, random));
 
             _trains.Add(train);
 
             train.ShowCarriagesInformation();
         }
 
-        private void FormTrain(int passengerCount, Train train, Random random)
+        private List<Carriage> FormTrain(int passengerCount, Random random)
         {
+            const int MaxCarriageСapacity = 200;
+            const int MinCarriageСapacity = 60;
+
+            List<Carriage> carriages = new List<Carriage>();
+            
             int carriageNumber = 1;
 
             while (passengerCount > 0)
             {
-                int currentPassengerCount = random.Next(minCarriageСapacity, maxCarriageСapacity + 1);
+                int currentPassengerCount = random.Next(MinCarriageСapacity, MaxCarriageСapacity + 1);
 
                 Carriage carriage = new Carriage(currentPassengerCount, carriageNumber++);
 
@@ -146,8 +140,10 @@ namespace OOP
                     passengerCount = 0;
                 }
 
-                train.AddCarriage(carriage);
+                carriages.Add(carriage);
             }
+
+            return carriages;
         }
 
         private Direction CreateDirection()
@@ -157,12 +153,20 @@ namespace OOP
             Console.Write("Введите пункт прибытия: ");
             string arrivalPoint = Console.ReadLine();
 
+            if(departurePoint.ToLower() == arrivalPoint.ToLower())
+            {
+                Console.WriteLine("Неверный ввод.");
+                CreateDirection();
+            }
+
             return new Direction(departurePoint, arrivalPoint);
         }
 
         private int SellTikets(Random random)
         {
-            return random.Next(maxTrainСapacity);
+            const int MaxTrainСapacity = 1500;
+
+            return random.Next(MaxTrainСapacity);
         }
     }
 
@@ -178,7 +182,7 @@ namespace OOP
             _disparcher = disparcher;
         }
 
-        public void Menu()
+        public void ShowMenu()
         {
             bool isActive = true;
 
