@@ -11,175 +11,192 @@ namespace OOP
             Console.OutputEncoding = Encoding.Unicode;
             Console.InputEncoding = Encoding.Unicode;
 
-            SellerCreator creator = new SellerCreator();
-            Store store = new Store(creator.Create(), new Buyer("Евгений", 100), "Свежие фрукты");
-            store.Open();
+            RussianRailways russianRailways = new RussianRailways(new Disparcher());
+            russianRailways.Menu();
         }
     }
 
-    class SellerCreator
+    class Train
     {
-        public Seller Create()
+        private List<Carriage> _carriages;
+        private Direction _direction;
+
+        public Train(Direction direction)
         {
-            List<Product> products = new List<Product>();
-            products.Add(new Product("Яблоко", 100, "Россия"));
-            products.Add(new Product("Банан", 192, "Эквадор"));
-            products.Add(new Product("Виноград", 95, "Испания"));
-            products.Add(new Product("Мандарин", 52, "Турция"));
-            products.Add(new Product("Апельсин", 79, "Турция"));
-            products.Add(new Product("Груша", 30, "Беларусь"));
-
-            return new Seller("Игорь", 0, products);
+            _direction = direction;
+            _carriages = new List<Carriage>();
         }
-    }
-
-    class Product
-    {
-        public Product(string name, int price, string description)
-        {
-            Name = name;
-            Price = price;
-            Description = description;
-        }
-
-        public string Name { get; private set; }
-        public string Description { get; private set; }
-        public int Price { get; private set; }
 
         public void Show()
         {
-            Console.WriteLine(Name + " " + Price);
-            Console.WriteLine(Description);
-        }
-    }
-    abstract class Person
-    {
-        protected List<Product> _products;
-
-        public Person(List<Product> products,int money, string name)
-        {
-            _products = products;
-            Name = name;
-            Money = money;
+            Console.WriteLine($"{_direction.DeparturePoint} - {_direction.ArrivalPoint}");
         }
 
-        public string Name { get; protected set; }
-        public int Money {  get; protected set; }
-
-        public void AddProduct(Product product)
+        public void ShowCarriagesInformation()
         {
-            _products.Add(product);
-        }
-
-        public void ShowProducts()
-        {
-            foreach (Product product in _products)
+            foreach(Carriage carriage in _carriages)
             {
-                product.Show();
-                Console.WriteLine();
+                carriage.Show();
             }
         }
+
+        public void AddCarriage(Carriage carriage)
+        {
+            _carriages.Add(carriage);
+        }
     }
 
-    class Seller : Person
+    class Carriage
     {
-        public Seller(string name,int money, List<Product> products) : base(products,money, name) { }
-        
-        public bool SellProduct(string productName, Buyer buyer)
+        public Carriage(int maxSeats, int number)
         {
-            if (TryGetProduct(productName, out Product product) == true)
+            MaxSeats = maxSeats;
+            Number = number;
+            ReservedSeats = 0;
+        }
+
+        public int MaxSeats { get; private set; }
+        public int ReservedSeats { get; private set; }
+        public int Number { get; private set; }
+
+        public void ReserveSeats(int reservedSeats)
+        {
+            if (reservedSeats > 0)
             {
-                if (buyer.TryBuyProduct(product))
+                ReservedSeats += reservedSeats;
+            }
+        }
+
+        public void Show()
+        {
+            Console.WriteLine($"Номер варона:{Number}\n" +
+                $"Количество мест: {MaxSeats}\n" +
+                $"Забронировано мест: {ReservedSeats}\n");
+        }
+    }
+
+    class Direction
+    {
+        public Direction(string departurePoint, string arrivalPoint)
+        {
+            DeparturePoint = departurePoint;
+            ArrivalPoint = arrivalPoint;
+        }
+
+        public string DeparturePoint { get; private set; }
+        public string ArrivalPoint { get; private set; }
+    }
+
+    class Disparcher
+    {
+        private const int maxCarriageСapacity = 200;
+        private const int minCarriageСapacity = 60;
+        private const int maxTrainСapacity = 1500;
+
+        private List<Train> _trains;
+
+        public Disparcher()
+        {
+            _trains = new List<Train>();
+        }
+
+        public void ShowTrainsInformation()
+        {
+            foreach (Train train in _trains)
+            {
+                train.Show();
+            }
+        }
+
+        public void CreateTrain()
+        {            
+            Direction direction = CreateDirection();
+
+            Train train = new Train(direction);
+
+            Random random = new Random();
+
+            int passengerCount = SellTikets(random);
+
+            FormTrain(passengerCount, train, random);
+
+            _trains.Add(train);
+
+            train.ShowCarriagesInformation();
+        }
+
+        private void FormTrain(int passengerCount, Train train, Random random)
+        {
+            int carriageNumber = 1;
+
+            while (passengerCount > 0)
+            {
+                int currentPassengerCount = random.Next(minCarriageСapacity, maxCarriageСapacity + 1);
+
+                Carriage carriage = new Carriage(currentPassengerCount, carriageNumber++);
+
+                if (currentPassengerCount <= passengerCount)
                 {
-                    _products.Remove(product);
-                    Money += product.Price;
-                    return true;
+                    passengerCount -= currentPassengerCount;
+                    carriage.ReserveSeats(currentPassengerCount);
                 }
-            }
-
-            return false;
-        }
-
-        private bool TryGetProduct(string productName, out Product product)
-        {
-            foreach(Product currentProduct in _products)
-            {
-                if(currentProduct.Name == productName)
+                else
                 {
-                    product = currentProduct;
-                    return true;
+                    carriage.ReserveSeats(passengerCount);
+                    passengerCount = 0;
                 }
-            }
 
-            product = null;
-            return false;
+                train.AddCarriage(carriage);
+            }
+        }
+
+        private Direction CreateDirection()
+        {
+            Console.Write("Введите пукт отправление: ");
+            string departurePoint = Console.ReadLine();
+            Console.Write("Введите пункт прибытия: ");
+            string arrivalPoint = Console.ReadLine();
+
+            return new Direction(departurePoint, arrivalPoint);
+        }
+
+        private int SellTikets(Random random)
+        {
+            return random.Next(maxTrainСapacity);
         }
     }
 
-    class Buyer : Person
+    class RussianRailways
     {
-        public Buyer(string name, int money) : base(new List<Product>(), money, name) { }
+        private const string CreateTrainCommand = "1";
+        private const string ExitCommant = "2";
 
-        public bool TryBuyProduct(Product product)
+        private Disparcher _disparcher;
+
+        public RussianRailways(Disparcher disparcher)
         {
-            if(Money >= product.Price)
-            {
-                Money -= product.Price;
-                AddProduct(product);
-                return true;
-            }
-
-            return false;
-        }        
-    }
-
-    class Store
-    {
-        const string ShowProductsCommand = "1";
-        const string BuyCommand = "2";
-        const string ExitCommand = "3";
-
-
-        private Seller _seller;
-        private Buyer _buyer;
-
-        public Store(Seller seller, Buyer buyer, string name)
-        {
-            _seller = seller;
-            _buyer = buyer;
-            Name = name;
+            _disparcher = disparcher;
         }
 
-        public string Name { get; private set;}
-
-        public void Open()
+        public void Menu()
         {
-            Console.WriteLine($"{_buyer.Name} - Добро пожаловать в магазин {Name}");
+            bool isActive = true;
 
-            bool isOpen = true;
-
-            while (isOpen)
+            while (isActive)
             {
-                Console.Clear();
-                Console.WriteLine($"{ShowProductsCommand} - показать товары\n" +
-                    $"{BuyCommand} - купить товар\n" +
-                    $"{ExitCommand} - выйти.");
-
+                _disparcher.ShowTrainsInformation();
+                Console.WriteLine($"{CreateTrainCommand} - создать поезд\n{ExitCommant} - выйти");
                 string userInput = Console.ReadLine();
 
                 switch (userInput)
                 {
-                    case ShowProductsCommand:
-                        _seller.ShowProducts();
+                    case CreateTrainCommand:
+                        _disparcher.CreateTrain();
                         break;
 
-                    case BuyCommand:
-                        Sell();
-                        break;
-
-                    case ExitCommand:
+                    case ExitCommant:
+                        isActive = false;
                         Console.WriteLine("Вы вышли.");
-                        isOpen = false;
                         break;
 
                     default:
@@ -187,26 +204,8 @@ namespace OOP
                         break;
                 }
 
-                Console.ReadKey();
-            }
-
-            Console.WriteLine("Ваши покупки: ");
-            _buyer.ShowProducts();
-            Console.WriteLine($"у вас осталось: {_buyer.Money} денег.");
-        }
-
-        private void Sell()
-        {
-            Console.Write("Введите название товара: ");
-            string productName = Console.ReadLine();
-
-            if (_seller.SellProduct(productName, _buyer) == true)
-            {
-                Console.WriteLine($"Вы купили - {productName}");
-            }
-            else
-            {
-                Console.WriteLine("Вы не смогли купить товар.");
+                Console.ReadLine();
+                Console.Clear();
             }
         }
     }
