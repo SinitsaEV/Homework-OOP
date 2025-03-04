@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -13,7 +13,7 @@ namespace OOP
 
             ArenaCreator creator = new ArenaCreator();
             Arena arena = creator.Create();
-            arena.ShowMenu();
+            arena.InitializeGame();
         }
     }
 
@@ -33,9 +33,9 @@ namespace OOP
         }
     }
 
-    static class FighterCreator
+    class FighterCreator
     {
-        static public Fighter Create(Fighter fighter)
+        public Fighter Create(Fighter fighter)
         {
             switch (fighter)
             {
@@ -69,7 +69,7 @@ namespace OOP
             _fighterList = fighterList;
         }
 
-        public void ShowMenu()
+        public void InitializeGame()
         {            
             const string ShowWelcomeMessageCommand = "1";
             const string ShowBattleCommand = "2";
@@ -110,24 +110,36 @@ namespace OOP
 
         private void SimulateBattle()
         {
-            List<Fighter> fighters = new List<Fighter>();
-            fighters.Add(ChooseFighter());
-            fighters.Add(ChooseFighter());
+            List<Fighter> fighters = ChooseFighters();
 
             while (fighters[0].CurrentHealth > 0 && fighters[1].CurrentHealth > 0)
             {
                 int randomIndex = UserUtils.GenerateRandomNumber(0, fighters.Count - 1);
 
-                HitTarget(fighters[randomIndex], fighters[fighters.Count - 1 - randomIndex]);
-                HitTarget(fighters[fighters.Count - 1 - randomIndex], fighters[randomIndex]);
+                fighters[randomIndex].Attack(fighters[fighters.Count - 1 - randomIndex]);
+                fighters[fighters.Count - 1 - randomIndex].Attack(fighters[randomIndex]);
 
-                foreach(Fighter fighter in fighters)
-                {
-                    Console.WriteLine($"{fighter.Name} - {fighter.CurrentHealth} xp");
-                }
+                ShowFighterHeals(fighters);
             }
 
             DetermineWinner(fighters);
+        }
+
+        private List<Fighter> ChooseFighters()
+        {
+            List<Fighter> fighters = new List<Fighter>();
+            fighters.Add(ChooseFighter());
+            fighters.Add(ChooseFighter());
+
+            return fighters;
+        }
+
+        private void ShowFighterHeals(List<Fighter> fighters)
+        {
+            foreach (Fighter fighter in fighters)
+            {
+                Console.WriteLine($"{fighter.Name} - {fighter.CurrentHealth} xp");
+            }
         }
 
         private void DetermineWinner(List<Fighter> fighters)
@@ -146,36 +158,6 @@ namespace OOP
             }
         }
 
-        private void HitTarget(Fighter attacker, Fighter target)
-        {
-            switch (attacker)
-            {
-                case FireMage fireMage:
-                    fireMage.Attack(target);
-                    break;
-
-                case Doubler doubler:
-                    doubler.Attack(target);
-                    break;
-
-                case DoubleStrike doubleStrike:
-                    doubleStrike.Attack(target);
-                    break;
-
-                case EvasiveWarrior evasiveWarrior:
-                    evasiveWarrior.Attack(target);
-                    break;
-
-                case FuriousDefender defender:
-                    defender.Attack(target);
-                    break;
-
-                default:
-                    Console.WriteLine();
-                    break;
-            }
-        }
-
         private Fighter ChooseFighter()
         {
             ShowFighters();
@@ -191,8 +173,9 @@ namespace OOP
                     if (fighterIndex >= 0 && fighterIndex < _fighterList.Count)
                     {
                         isCorrectInput = true;
+                        FighterCreator fighterCreator = new FighterCreator();
 
-                        return FighterCreator.Create(_fighterList[fighterIndex]);
+                        return fighterCreator.Create(_fighterList[fighterIndex]);
                     }
                     else
                     {
@@ -212,7 +195,8 @@ namespace OOP
         {
             foreach (Fighter fighterInList in _fighterList)
             {
-                Console.WriteLine(_fighterList.FindIndex(fighter => fighter.Name == fighterInList.Name) + " " + fighterInList.Name);
+                int fighterIndex = _fighterList.FindIndex(fighter => fighter.Name == fighterInList.Name);
+                Console.WriteLine(fighterIndex + " " + fighterInList.Name);
             }
         }
     }    
@@ -437,12 +421,7 @@ namespace OOP
 
             int randomIndex = UserUtils.GenerateRandomNumber(min, max);
 
-            if(randomIndex < DodgeChance)
-            {                
-                return true;
-            }
-
-            return false;
+            return randomIndex < DodgeChance;
         }
     }
 
@@ -453,11 +432,6 @@ namespace OOP
         public static int GenerateRandomNumber(int min, int max)
         {
             return random.Next(min, max + 1);
-        }
-
-        public static int GenerateRandomNumber(int max)
-        {
-            return random.Next(max + 1);
         }
     }
 }
