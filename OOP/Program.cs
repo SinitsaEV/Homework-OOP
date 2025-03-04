@@ -148,15 +148,20 @@ namespace OOP
 
         private Direction CreateDirection()
         {
-            Console.Write("Введите пукт отправление: ");
-            string departurePoint = Console.ReadLine();
-            Console.Write("Введите пункт прибытия: ");
-            string arrivalPoint = Console.ReadLine();
-
-            if(departurePoint.ToLower() == arrivalPoint.ToLower())
+            bool isActive = true;
+           
+            while(isActive)
             {
-                Console.WriteLine("Неверный ввод.");
-                CreateDirection();
+                Console.Write("Введите пукт отправление: ");
+                string departurePoint = Console.ReadLine();
+                Console.Write("Введите пункт прибытия: ");
+                string arrivalPoint = Console.ReadLine();
+
+                if(departurePoint.ToLower() == arrivalPoint.ToLower())
+                {
+                    Console.WriteLine("Неверный ввод.");
+                    isActive = false;
+                }
             }
 
             return new Direction(departurePoint, arrivalPoint);
