@@ -85,6 +85,7 @@ namespace OOP
     class Disparcher
     {
         private List<Train> _trains;
+        private static Random s_random = new Random();
 
         public Disparcher()
         {
@@ -103,11 +104,9 @@ namespace OOP
         {
             Direction direction = CreateDirection();
 
-            Random random = new Random();
+            int passengerCount = SellTikets(s_random);
 
-            int passengerCount = SellTikets(random);
-
-            Train train = new Train(direction, FormTrain(passengerCount, random));
+            Train train = new Train(direction, FormTrain(passengerCount, s_random));
 
             _trains.Add(train);
 
@@ -120,7 +119,7 @@ namespace OOP
             const int MinCarriageСapacity = 60;
 
             List<Carriage> carriages = new List<Carriage>();
-            
+
             int carriageNumber = 1;
 
             while (passengerCount > 0)
@@ -148,16 +147,18 @@ namespace OOP
 
         private Direction CreateDirection()
         {
+            string arrivalPoint = "";
+            string departurePoint = "";
             bool isActive = true;
-           
-            while(isActive)
+
+            while (isActive)
             {
                 Console.Write("Введите пукт отправление: ");
-                string departurePoint = Console.ReadLine();
+                departurePoint = Console.ReadLine();
                 Console.Write("Введите пункт прибытия: ");
-                string arrivalPoint = Console.ReadLine();
+                arrivalPoint = Console.ReadLine();
 
-                if(departurePoint.ToLower() == arrivalPoint.ToLower())
+                if (departurePoint.ToLower() == arrivalPoint.ToLower())
                 {
                     Console.WriteLine("Неверный ввод.");
                     isActive = false;
