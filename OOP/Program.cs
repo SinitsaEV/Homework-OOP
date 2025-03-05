@@ -193,6 +193,7 @@ namespace OOP
             CurrentHealth = MaxHealth;
             Armor = 5;
         }
+        
         public int Damage { get; protected set; }
         public int MaxHealth { get; protected set; }
         public int CurrentHealth { get; protected set; }
@@ -433,11 +434,11 @@ namespace OOP
 
     class UserUtils
     {
-        private static Random random = new Random();
+        private static Random s_random = new Random();
 
         public static int GenerateRandomNumber(int min, int max)
         {
-            return random.Next(min, max + 1);
+            return s_random.Next(min, max + 1);
         }        
     }
 }
