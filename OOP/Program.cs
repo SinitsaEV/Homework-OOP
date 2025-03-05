@@ -33,33 +33,6 @@ namespace OOP
         }
     }
 
-    class FighterCreator
-    {
-        public Fighter Create(Fighter fighter)
-        {
-            switch (fighter)
-            {
-                case FireMage fireMage:
-                    return new FireMage(fireMage.Name, fireMage.Mana, fireMage.FireBallCost, fireMage.FireBallDamage);
-
-                case Doubler doubler:
-                    return new Doubler(doubler.Name, doubler.DoubleDamageChance);
-
-                case DoubleStrike doubleStrike:
-                    return new DoubleStrike(doubleStrike.Name, doubleStrike.BonusAttackFrequency);
-
-                case EvasiveWarrior evasiveWarrior:
-                    return new EvasiveWarrior(evasiveWarrior.Name, evasiveWarrior.DodgeChance);
-
-                case FuriousDefender defender:
-                    return new FuriousDefender(defender.Name);
-
-                default:
-                    return null;
-            }
-        }
-    }
-
     class Arena
     {
         private List<Fighter> _fighterList;
@@ -109,48 +82,53 @@ namespace OOP
         }
 
         private void SimulateBattle()
-        {
-            List<Fighter> fighters = ChooseFighters();
+        {            
+            Fighter firstFighter = ChooseFighter();
+            Fighter secondFighter = ChooseFighter();
 
-            while (fighters[0].CurrentHealth > 0 && fighters[1].CurrentHealth > 0)
+            while (firstFighter.CurrentHealth > 0 && secondFighter.CurrentHealth > 0)
             {
-                int randomIndex = UserUtils.GenerateRandomNumber(0, fighters.Count - 1);
-
-                fighters[randomIndex].Attack(fighters[fighters.Count - 1 - randomIndex]);
-                fighters[fighters.Count - 1 - randomIndex].Attack(fighters[randomIndex]);
-
-                ShowFighterHeals(fighters);
+                SimulateRound(firstFighter, secondFighter);
             }
 
-            DetermineWinner(fighters);
+            DetermineWinner(firstFighter, secondFighter);
         }
 
-        private List<Fighter> ChooseFighters()
+        private void SimulateRound(Fighter firstFighter, Fighter secondFighter)
         {
-            List<Fighter> fighters = new List<Fighter>();
-            fighters.Add(ChooseFighter());
-            fighters.Add(ChooseFighter());
+            int secondFighterIndex = 1;
+            int firstFighterIndex = 0;
+            int randomIndex = UserUtils.GenerateRandomNumber(firstFighterIndex, secondFighterIndex);
 
-            return fighters;
+            if (randomIndex == firstFighterIndex)
+                PerformCombatRound(firstFighter, secondFighter);
+            else
+                PerformCombatRound(secondFighter, firstFighter);
+
+            ShowFighterHeals(firstFighter);
+            ShowFighterHeals(secondFighter);
         }
 
-        private void ShowFighterHeals(List<Fighter> fighters)
+        private void PerformCombatRound(Fighter firstAttacker, Fighter secondAttacker)
         {
-            foreach (Fighter fighter in fighters)
+            firstAttacker.Attack(secondAttacker);
+            secondAttacker.Attack(firstAttacker);
+        }
+
+        private void ShowFighterHeals(Fighter fighter)
+        {
+            Console.WriteLine($"{fighter.Name} - {fighter.CurrentHealth} xp");
+        }
+
+        private void DetermineWinner(Fighter firstFighter, Fighter secondFighter)
+        {
+            if (firstFighter.CurrentHealth > 0)
             {
-                Console.WriteLine($"{fighter.Name} - {fighter.CurrentHealth} xp");
+                Console.WriteLine(firstFighter.Name + " победил");
             }
-        }
-
-        private void DetermineWinner(List<Fighter> fighters)
-        {
-            if (fighters[0].CurrentHealth > 0)
+            else if (secondFighter.CurrentHealth > 0)
             {
-                Console.WriteLine(fighters[0].Name + " победил");
-            }
-            else if (fighters[1].CurrentHealth > 0)
-            {
-                Console.WriteLine(fighters[1].Name + " победил");
+                Console.WriteLine(secondFighter.Name + " победил");
             }
             else
             {
@@ -173,9 +151,8 @@ namespace OOP
                     if (fighterIndex >= 0 && fighterIndex < _fighterList.Count)
                     {
                         isCorrectInput = true;
-                        FighterCreator fighterCreator = new FighterCreator();
 
-                        return fighterCreator.Create(_fighterList[fighterIndex]);
+                        return _fighterList[fighterIndex].Clone();
                     }
                     else
                     {
@@ -196,10 +173,10 @@ namespace OOP
             foreach (Fighter fighterInList in _fighterList)
             {
                 int fighterIndex = _fighterList.FindIndex(fighter => fighter.Name == fighterInList.Name);
-                Console.WriteLine(fighterIndex + " " + fighterInList.Name);
+                Console.WriteLine($"{fighterIndex} {fighterInList.Name}");
             }
         }
-    }    
+    }
 
     public interface IDamageable
     {
@@ -235,6 +212,8 @@ namespace OOP
             Console.WriteLine($"{Name} нанес {Damage} урона");
             damageable.TakeDamage(Damage);
         }
+
+        public abstract Fighter Clone();       
     }
 
     class Doubler : Fighter
@@ -256,6 +235,11 @@ namespace OOP
             }
         }
 
+        public override Fighter Clone()
+        {
+            return new Doubler(Name, DoubleDamageChance);
+        }
+
         private bool TryDoubleDamage(IDamageable damageable)
         {
             int max = 100;
@@ -265,8 +249,10 @@ namespace OOP
 
             if(randomIndex <= DoubleDamageChance)
             {
-                damageable.TakeDamage(Damage * DoubleDamageMultiplier);
-                Console.WriteLine($"{Name} нанес {Damage * DoubleDamageMultiplier} урона");
+                int doubleDamage = Damage * DoubleDamageMultiplier;
+                damageable.TakeDamage(doubleDamage);
+                Console.WriteLine($"{Name} нанес {doubleDamage} урона");
+
                 return true;
             }
 
@@ -290,6 +276,11 @@ namespace OOP
             TryBonusAttack(damageable);
 
             base.Attack(damageable);
+        }
+
+        public override Fighter Clone()
+        {
+            return new DoubleStrike(Name, BonusAttackFrequency);
         }
 
         private void TryBonusAttack(IDamageable damageable)
@@ -338,6 +329,11 @@ namespace OOP
             }
         }
 
+        public override Fighter Clone()
+        {
+            return new FuriousDefender(Name);
+        }
+
         private bool TryRageHeal()
         {
             if(CurrentRageValue == MaxRageValue)
@@ -379,6 +375,11 @@ namespace OOP
             }
         }
 
+        public override Fighter Clone()
+        {
+            return new FireMage(Name, Mana, FireBallCost, FireBallDamage);
+        }
+
         private bool TryCastFireBall(IDamageable fighter)
         {
             if(Mana >= FireBallCost)
@@ -414,6 +415,11 @@ namespace OOP
             }
         }
 
+        public override Fighter Clone()
+        {
+            return new EvasiveWarrior(Name, DodgeChance);
+        }
+
         private bool TryDodgeAttack()
         {
             int max = 100;
@@ -432,6 +438,6 @@ namespace OOP
         public static int GenerateRandomNumber(int min, int max)
         {
             return random.Next(min, max + 1);
-        }
+        }        
     }
 }
