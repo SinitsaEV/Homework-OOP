@@ -190,8 +190,7 @@ namespace OOP
             {
                 Console.WriteLine("Клиент обслужен");
                 Console.WriteLine($"Баланс магазина: {_supermarket.Balanse}");
-            }
-            
+            }            
         }
 
         private void AddClient()
