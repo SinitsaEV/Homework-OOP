@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -77,7 +77,7 @@ namespace OOP
             Console.WriteLine("Клиентов в очереди: " + _clients.Count);
         }
 
-        public bool TryServiceClient()
+        public bool TryServeClient()
         {
             if(_clients.Count == 0)
             {
@@ -103,12 +103,11 @@ namespace OOP
             int maxProductsCount = 10;
             int minProductsCount = 5;
 
-            int randomIndex = UserUtils.GenerateRandomNumber(minProductsCount, maxProductsCount);
+            int randomProductsCount = UserUtils.GenerateRandomNumber(minProductsCount, maxProductsCount);
 
-            while (randomIndex > 0)
+            for (int i = 0; i < randomProductsCount; i++)
             {
                 _clients.Peek().AddProductToBasket(_storage.GetRandomProduct());
-                randomIndex--;
             }
         } 
     }
@@ -187,7 +186,7 @@ namespace OOP
 
         private void InitiateClientService()
         {
-            if (_supermarket.TryServiceClient())
+            if (_supermarket.TryServeClient())
             {
                 Console.WriteLine("Клиент обслужен");
                 Console.WriteLine($"Баланс магазина: {_supermarket.Balanse}");
@@ -312,10 +311,12 @@ namespace OOP
 
                 Console.WriteLine($"{Name} купил:");
                 _bag.ShowProducts();
+
+                return true;
             }
 
             money = 0;
-            return true;
+            return false;
         }
 
         private void RemoveExcessProducts()
@@ -331,18 +332,18 @@ namespace OOP
 
     abstract class ProductContainer
     {
-        protected List<Product> _products;
+        protected List<Product> Products;
 
         protected ProductContainer()
         {
-            _products = new List<Product>();
+            Products = new List<Product>();
         }
 
         public virtual bool TryAddProduct(Product product)
         {
             if (product != null)
             {
-                _products.Add(product);
+                Products.Add(product);
                 return true;
             }
 
@@ -353,11 +354,11 @@ namespace OOP
         {
             if (product != null)
             {
-                foreach (Product productInList in _products)
+                foreach (Product productInList in Products)
                 {
                     if (productInList.Equals(product))
                     {
-                        _products.Remove(productInList);
+                        Products.Remove(productInList);
                         return true;
                     }
                 }
@@ -368,7 +369,7 @@ namespace OOP
 
         public void ShowProducts()
         {
-            foreach (Product product in _products)
+            foreach (Product product in Products)
             {
                 product.Show();
             }
@@ -376,7 +377,7 @@ namespace OOP
 
         public int GetCount()
         {
-            return _products.Count;
+            return Products.Count;
         }
 
     }
@@ -392,7 +393,7 @@ namespace OOP
 
         public void Clear()
         {
-            _products.Clear();
+            Products.Clear();
             TotalPrice = 0;
         }
 
@@ -409,14 +410,14 @@ namespace OOP
 
         public List<Product> GetProducts()
         {
-            return new List<Product>(_products);
+            return new List<Product>(Products);
         }
 
         public void RemoveProduct(int index)
         {
-            TotalPrice -= _products[index].Price;
-            Console.WriteLine($"{_products[index].Name} - удален из корзины");
-            _products.Remove(_products[index]);
+            TotalPrice -= Products[index].Price;
+            Console.WriteLine($"{Products[index].Name} - удален из корзины");
+            Products.Remove(Products[index]);
         }
     }
 
@@ -426,9 +427,9 @@ namespace OOP
 
         public void AddProducts(List<Product> products)
         {
-            if (_products != null)
+            if (Products != null)
             {
-                _products.AddRange(products);                
+                Products.AddRange(products);                
             }
         }
     }
@@ -437,14 +438,14 @@ namespace OOP
     {
         public Storage(List<Product> products)
         {
-            _products = products;
+            Products = products;
         }
 
         public Product GetRandomProduct()
         {
-            int randomProductIndex = UserUtils.GenerateRandomNumber(0, _products.Count);
+            int randomProductIndex = UserUtils.GenerateRandomNumber(0, Products.Count);
 
-            return _products[randomProductIndex].Clone();
+            return Products[randomProductIndex].Clone();
         }
     }
 
