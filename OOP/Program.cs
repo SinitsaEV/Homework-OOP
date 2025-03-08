@@ -11,281 +11,177 @@ namespace OOP
             Console.OutputEncoding = Encoding.Unicode;
             Console.InputEncoding = Encoding.Unicode;
 
-            BattlefieldCreator creator = new BattlefieldCreator();
-            Battlefield battlefield = creator.Create();
-            battlefield.InitialiseWar();
+            Aquarium aquarium = new Aquarium(5);
+            Aquarist aquarist = new Aquarist(aquarium);
+            aquarist.Work();
         }
     }
 
-    public interface IDamageable
+    class Fish
     {
-        void TakeDamage(int damage);
-    }
-
-    class RegularSoldier : IDamageable
-    {
-        public RegularSoldier(string name)
+        public Fish(string name, int healse)
         {
             Name = name;
-            Health = 100;
-            Armor = 10;
-            Damage = 20;
-        }
-
-        public string Name { get; protected set; }
-        public string Description { get; protected set; }
-        public int Health { get; protected set; }
-        public int Armor { get; protected set; }
-        public int Damage { get; protected set; }
-
-        public void TakeDamage(int damage)
-        {
-            int currentDamage = damage - Armor;
-
-            if (currentDamage > 0)
-            {                
-                Health -= currentDamage;
-                Console.WriteLine($"{Name} получил {currentDamage} урона. Осталось: {Health}");
-            }
-        }
-
-        public virtual RegularSoldier Clone()
-        {
-            return new RegularSoldier(Name);
-        }
-
-        public virtual void Attack(List<IDamageable> damageables)
-        {
-            IDamageable target = GetRandomTarget(damageables);
-
-            if (target != null)
-            {
-                Console.WriteLine($"{Name} атакует:");
-                target.TakeDamage(Damage);
-            }
-        }
-
-        protected IDamageable GetRandomTarget(List<IDamageable> targets)
-        {
-            int randomIndex = UserUtils.GenerateRandomNumber(0, targets.Count);
-
-            return targets[randomIndex];
-        }
-    }
-
-    class SniperSoldier : RegularSoldier
-    {
-        private int _damageMultiplier;
-
-        public SniperSoldier(string name, int damageMultiplier) : base(name)
-        {
-            _damageMultiplier = damageMultiplier;
-        }
-
-        public override void Attack(List<IDamageable> damageables)
-        {
-            IDamageable target = GetRandomTarget(damageables);
-
-            if (target != null)
-            {
-                Console.WriteLine($"{Name} атакует:");
-                target.TakeDamage(Damage * _damageMultiplier);
-            }
-        }
-    }
-
-    class MultiTargetSoldier : RegularSoldier
-    {
-        private int _targetsCount;
-
-        public MultiTargetSoldier(string name, int targetsCount) : base(name)
-        {
-            _targetsCount = targetsCount;
-        }
-
-        public List<IDamageable> GetRandomTargets(List<IDamageable> damageables)
-        {
-            List<IDamageable> targets = new List<IDamageable>();
-            IDamageable target;
-
-            if (_targetsCount >= damageables.Count)
-            {
-                return damageables;
-            }
-
-            for(int i = 0; i < _targetsCount; i++)
-            {
-                target = GetRandomTarget(damageables);
-
-                if (targets.Contains(target))
-                {
-                    continue;
-                }
-
-                targets.Add(target);
-            }
-
-            return targets;
-        }
-
-        public override void Attack(List<IDamageable> damageables)
-        {
-            List<IDamageable> targets = GetRandomTargets(damageables);
-
-            if (damageables != null)
-            {
-                Console.WriteLine($"{Name} атакует:");
-
-                foreach (IDamageable target in targets)
-                {
-                    target.TakeDamage(Damage);
-                }
-            }
-        }
-
-        public override RegularSoldier Clone()
-        {
-            return new MultiTargetSoldier(Name, _targetsCount);
-        }
-    }
-
-    class ScatterSoldier : RegularSoldier
-    {
-        private int _targetsCount;
-
-        public ScatterSoldier(string name, int targetsCount) : base(name)
-        {
-            _targetsCount = targetsCount;
-        }
-
-        public List<IDamageable> GetRandomTargets(List<IDamageable> damageables)
-        {
-            List<IDamageable> targets = new List<IDamageable>();
-
-            if (_targetsCount >= damageables.Count)
-            {
-                return damageables;
-            }
-
-            for (int i = 0; i < _targetsCount; i++)
-            {
-                targets.Add(GetRandomTarget(damageables));
-            }
-
-            return targets;
-        }
-
-        public override void Attack(List<IDamageable> damageables)
-        {
-            List<IDamageable> targets = GetRandomTargets(damageables);
-
-            if (damageables != null)
-            {
-                Console.WriteLine($"{Name} атакует:");
-
-                foreach (IDamageable target in targets)
-                {
-                    target.TakeDamage(Damage);
-                }
-            }
-        }
-
-        public override RegularSoldier Clone()
-        {
-            return new ScatterSoldier(Name, _targetsCount);
-        }
-    }
-
-    class Platoon
-    {
-        private List<RegularSoldier> _soldiers;
-
-        public Platoon(List<RegularSoldier> soldiers, string name)
-        {
-            _soldiers = soldiers;
-            Name = name;
+            Health = healse;
         }
 
         public string Name { get; private set; }
-
-        public void Attack(List<IDamageable> damageables)
+        public int Health { get; private set; }
+       
+        public void Show()
         {
-            Console.WriteLine($"{Name} атакует:");
+            Console.WriteLine($"Название: {Name} Возраст: {Health}");
+        }
 
-            foreach (RegularSoldier soldier in _soldiers)
+        public void ReduceHealth()
+        {
+            if (Health > 0)
+                Health--;
+            else
+                Console.WriteLine($"Рыбка {Name} погибла.");
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj == null)
+                return false;
+
+            if (!(obj is Fish other))
+                return false;
+
+            return Name.ToLower() == other.Name.ToLower() && Health == other.Health;
+        }
+    }
+
+    class Aquarium
+    {
+        private List<Fish> _fish;
+
+        public Aquarium(int capacity)
+        {
+            _fish = new List<Fish>
             {
-                soldier.Attack(damageables);
+                new Fish("Карась",4),
+                new Fish("Окунь",5),
+                new Fish("Сом",5),
+                new Fish("Линь",3)
+            };
+            Capacity = capacity;
+        }
+
+        public int Capacity { get; private set; }
+
+        public bool TryAddFish(Fish fish)
+        {
+            if(fish == null)
+            {
+               return false;
             }
-        }
 
-        public Platoon Clone()
-        {
-            List<RegularSoldier> soldiers = new List<RegularSoldier>();
-
-            foreach(RegularSoldier soldier in _soldiers)
+            if(_fish.Count < Capacity)
             {
-                soldiers.Add(soldier.Clone());
+                _fish.Add(fish);
+                return true;
             }
 
-            return new Platoon(soldiers, Name);
+            return false;
         }
 
-        public List<IDamageable> GetDamageables()
+        public bool TryRemoveFish(Fish fish)
         {
-            return new List<IDamageable>(_soldiers);
-        }
-
-        public void RemoveDeadSoldiers()
-        {
-            foreach(RegularSoldier soldier in _soldiers)
+            foreach(Fish fishInList in _fish)
             {
-                if (soldier.Health <= 0)
+                if (fishInList.Equals(fish))
                 {
-                    Console.WriteLine($"{soldier.Name} пал.");
-                    _soldiers.Remove(soldier);
+                    _fish.Remove(fishInList);
+                    return true;
                 }
+            }
+
+            return false;
+        }
+
+        public void RemoveDeadFish()
+        {
+            for (int i = _fish.Count - 1; i >= 0; i--)
+            {
+                if (_fish[i].Health <= 0)
+                {
+                    Console.WriteLine($"Рыбку {_fish[i].Name} смыли в туалет.");
+                    _fish.Remove(_fish[i]);
+                }
+            }           
+        }
+
+        public void ShowFish()
+        {
+            foreach(Fish fish in _fish)
+            {
+                fish.Show();
+            }
+        }
+
+        public void UpdateFishHealth()
+        {
+            foreach(Fish fish in _fish)
+            {
+                fish.ReduceHealth();
             }
         }
     }
 
-    class Battlefield
+    class Aquarist
     {
-        private Platoon _firstPlatoon;
-        private Platoon _secondPlatoon;
+        private Aquarium _aquarium;
+        private FishFactory _fishFactory;
 
-        public Battlefield(string name, Platoon firstPlatoon, Platoon secondPlatoon)
+        public Aquarist(Aquarium aquarium)
         {
-            Name = name;
-            _firstPlatoon = firstPlatoon;
-            _secondPlatoon = secondPlatoon;
+            _aquarium = aquarium;
+            _fishFactory = new FishFactory();
         }
 
-        public string Name { get; private set; }
-
-        public void InitialiseWar()
+        public void Work()
         {
-            const string ShowBattleCommand = "1";
-            const string ExitCommand = "2";
-
-            Console.WriteLine($"Добро пожаловать на поле боя {Name}");
+            const string AddCommand = "1";
+            const string RemoveCommand = "2";
+            const string PassedYearCommand = "3";
+            const string ExitCommand = "4";
 
             bool isActive = true;
 
             while (isActive)
             {
-                Console.WriteLine($"{ShowBattleCommand} - посмотреть бой\n{ExitCommand} - выйти");
+                _aquarium.RemoveDeadFish();
+                _aquarium.ShowFish();
+
+                Console.WriteLine($"{AddCommand} - добавить рыбку\n" +
+                    $"{RemoveCommand} - удалить рыбку\n" +
+                    $"{PassedYearCommand} - пропустить год\n" +
+                    $"{ExitCommand} - выйти");
+
                 Console.Write("Введите команду: ");
                 string userInput = Console.ReadLine();
 
                 switch (userInput)
                 {
-                    case ShowBattleCommand:
-                        SimulateBattle();
+                    case AddCommand:
+                        AddFish();
                         break;
+
+                    case RemoveCommand:
+                        RemoveFish();
+                        break;
+
+                    case PassedYearCommand:
+                        _aquarium.UpdateFishHealth();
+                        break;
+
                     case ExitCommand:
                         isActive = false;
                         Console.WriteLine("Вы вышли.");
                         break;
+
                     default:
                         Console.WriteLine("Неверный ввод.");
                         break;
@@ -293,71 +189,53 @@ namespace OOP
             }
         }
 
-        private void SimulateBattle()
+        private void RemoveFish()
         {
-            Platoon firstPlatoon = _firstPlatoon.Clone();
-            Platoon secondPlatoon = _secondPlatoon.Clone();
-
-            while (firstPlatoon.GetDamageables().Count > 0 && secondPlatoon.GetDamageables().Count > 0) 
+            if (_aquarium.TryRemoveFish(_fishFactory.GetFish()))
             {
-                SimulateRound(firstPlatoon, secondPlatoon);
-            }
-
-            DetermineWinner(firstPlatoon, secondPlatoon);
-        }               
-
-        private void SimulateRound(Platoon firstPlatoon, Platoon secondPlatoon)
-        {
-            firstPlatoon.Attack(secondPlatoon.GetDamageables());
-            secondPlatoon.RemoveDeadSoldiers();
-
-            secondPlatoon.Attack(firstPlatoon.GetDamageables());
-            firstPlatoon.RemoveDeadSoldiers();
-        }
-
-        private void DetermineWinner(Platoon firstPlatoon, Platoon secondPlatoon)
-        {
-            if (firstPlatoon.GetDamageables().Count > 0)
-            {
-                Console.WriteLine($"{firstPlatoon.Name} победил.");
-            }
-            else if(secondPlatoon.GetDamageables().Count > 0)
-            {
-                Console.WriteLine($"{secondPlatoon.Name} победил.");
+                Console.WriteLine("Вы достали рыбку.");
             }
         }
+
+        private void AddFish()
+        {
+            if (_aquarium.TryAddFish(_fishFactory.GetFish()))
+            {
+                Console.WriteLine("Рыба добавлена.");
+            }
+        }       
     }
 
-    class BattlefieldCreator
+    class FishFactory
     {
-        public Battlefield Create()
+        public Fish GetFish()
         {
-            return new Battlefield("Америка", new Platoon(CreateSoldiers(), "Взвод 1"), new Platoon(CreateSoldiers(), "Взвод 2"));
+            Console.Write("Введите имя рыбки: ");
+            string name = Console.ReadLine();
+            Console.WriteLine("Введите здоровье рыбки: ");
+            int healse = GetInt();
+
+            return new Fish(name, healse);            
         }
 
-        private List<RegularSoldier> CreateSoldiers()
+        private int GetInt()
         {
-            return new List<RegularSoldier> {
+            bool isCorrectInput = false;
+            int result = 0;
 
-                new RegularSoldier("Обычный солдат 1"),
-                new RegularSoldier("Обычный солдат 2"),
-                new SniperSoldier("Солдат с множителем урона 1",3),
-                new SniperSoldier("Солдат с множителем урона 2",3),
-                new MultiTargetSoldier("Солдат атакующий 3-целей без повторения 1",3),
-                new MultiTargetSoldier("Солдат атакующий 4-целей без повторения 2",4),
-                new ScatterSoldier("Солдат атакующий 3-целей c повторениями 1",3),
-                new ScatterSoldier("Солдат атакующий 4-целей c повторениями 2",4)
-            };
-        }
-    }
+            while (isCorrectInput == false)
+            {
+                if (int.TryParse(Console.ReadLine(), out result) && result > 0)
+                {
+                    isCorrectInput = true;
+                }
+                else
+                {
+                    Console.WriteLine("Неверный ввод.");
+                }
+            }
 
-    class UserUtils
-    {
-        private static Random s_random = new Random();
-
-        public static int GenerateRandomNumber(int min, int max)
-        {
-            return s_random.Next(min, max);
+            return result;
         }
     }
 }
