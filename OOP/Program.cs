@@ -11,173 +11,281 @@ namespace OOP
             Console.OutputEncoding = Encoding.Unicode;
             Console.InputEncoding = Encoding.Unicode;
 
-            SupermarketCreator creator = new SupermarketCreator();
-            Administrator administrator = new Administrator(creator.Create());
-
-            administrator.InitializeAdministration();
+            BattlefieldCreator creator = new BattlefieldCreator();
+            Battlefield battlefield = creator.Create();
+            battlefield.InitialiseWar();
         }
     }
 
-    class Supermarket
+    public interface IDamageable
     {
-        private Queue<Client> _clients;
-        private Storage _storage;
+        void TakeDamage(int damage);
+    }
 
-        public Supermarket(string name, Queue<Client> clients, Storage storage)
+    class RegularSoldier : IDamageable
+    {
+        public RegularSoldier(string name)
         {
             Name = name;
-            _clients = clients;
-            _storage = storage;
-            Balanse = 0;
+            Health = 100;
+            Armor = 10;
+            Damage = 20;
+        }
+
+        public string Name { get; protected set; }
+        public string Description { get; protected set; }
+        public int Health { get; protected set; }
+        public int Armor { get; protected set; }
+        public int Damage { get; protected set; }
+
+        public void TakeDamage(int damage)
+        {
+            int currentDamage = damage - Armor;
+
+            if (currentDamage > 0)
+            {                
+                Health -= currentDamage;
+                Console.WriteLine($"{Name} получил {currentDamage} урона. Осталось: {Health}");
+            }
+        }
+
+        public virtual RegularSoldier Clone()
+        {
+            return new RegularSoldier(Name);
+        }
+
+        public virtual void Attack(List<IDamageable> damageables)
+        {
+            IDamageable target = GetRandomTarget(damageables);
+
+            if (target != null)
+            {
+                Console.WriteLine($"{Name} атакует:");
+                target.TakeDamage(Damage);
+            }
+        }
+
+        protected IDamageable GetRandomTarget(List<IDamageable> targets)
+        {
+            int randomIndex = UserUtils.GenerateRandomNumber(0, targets.Count);
+
+            return targets[randomIndex];
+        }
+    }
+
+    class SniperSoldier : RegularSoldier
+    {
+        private int _damageMultiplier;
+
+        public SniperSoldier(string name, int damageMultiplier) : base(name)
+        {
+            _damageMultiplier = damageMultiplier;
+        }
+
+        public override void Attack(List<IDamageable> damageables)
+        {
+            IDamageable target = GetRandomTarget(damageables);
+
+            if (target != null)
+            {
+                Console.WriteLine($"{Name} атакует:");
+                target.TakeDamage(Damage * _damageMultiplier);
+            }
+        }
+    }
+
+    class MultiTargetSoldier : RegularSoldier
+    {
+        private int _targetsCount;
+
+        public MultiTargetSoldier(string name, int targetsCount) : base(name)
+        {
+            _targetsCount = targetsCount;
+        }
+
+        public List<IDamageable> GetRandomTargets(List<IDamageable> damageables)
+        {
+            List<IDamageable> targets = new List<IDamageable>();
+            IDamageable target;
+
+            if (_targetsCount >= damageables.Count)
+            {
+                return damageables;
+            }
+
+            for(int i = 0; i < _targetsCount; i++)
+            {
+                target = GetRandomTarget(damageables);
+
+                if (targets.Contains(target))
+                {
+                    continue;
+                }
+
+                targets.Add(target);
+            }
+
+            return targets;
+        }
+
+        public override void Attack(List<IDamageable> damageables)
+        {
+            List<IDamageable> targets = GetRandomTargets(damageables);
+
+            if (damageables != null)
+            {
+                Console.WriteLine($"{Name} атакует:");
+
+                foreach (IDamageable target in targets)
+                {
+                    target.TakeDamage(Damage);
+                }
+            }
+        }
+
+        public override RegularSoldier Clone()
+        {
+            return new MultiTargetSoldier(Name, _targetsCount);
+        }
+    }
+
+    class ScatterSoldier : RegularSoldier
+    {
+        private int _targetsCount;
+
+        public ScatterSoldier(string name, int targetsCount) : base(name)
+        {
+            _targetsCount = targetsCount;
+        }
+
+        public List<IDamageable> GetRandomTargets(List<IDamageable> damageables)
+        {
+            List<IDamageable> targets = new List<IDamageable>();
+
+            if (_targetsCount >= damageables.Count)
+            {
+                return damageables;
+            }
+
+            for (int i = 0; i < _targetsCount; i++)
+            {
+                targets.Add(GetRandomTarget(damageables));
+            }
+
+            return targets;
+        }
+
+        public override void Attack(List<IDamageable> damageables)
+        {
+            List<IDamageable> targets = GetRandomTargets(damageables);
+
+            if (damageables != null)
+            {
+                Console.WriteLine($"{Name} атакует:");
+
+                foreach (IDamageable target in targets)
+                {
+                    target.TakeDamage(Damage);
+                }
+            }
+        }
+
+        public override RegularSoldier Clone()
+        {
+            return new ScatterSoldier(Name, _targetsCount);
+        }
+    }
+
+    class Platoon
+    {
+        private List<RegularSoldier> _soldiers;
+
+        public Platoon(List<RegularSoldier> soldiers, string name)
+        {
+            _soldiers = soldiers;
+            Name = name;
         }
 
         public string Name { get; private set; }
-        public int Balanse { get; private set; }
 
-        public bool TryAddClient(Client client)
+        public void Attack(List<IDamageable> damageables)
         {
-            if (client != null)
+            Console.WriteLine($"{Name} атакует:");
+
+            foreach (RegularSoldier soldier in _soldiers)
             {
-                _clients.Enqueue(client);
-                return true;
+                soldier.Attack(damageables);
+            }
+        }
+
+        public Platoon Clone()
+        {
+            List<RegularSoldier> soldiers = new List<RegularSoldier>();
+
+            foreach(RegularSoldier soldier in _soldiers)
+            {
+                soldiers.Add(soldier.Clone());
             }
 
-            return false;
+            return new Platoon(soldiers, Name);
         }
 
-        public void RemoveProduct(Product product)
+        public List<IDamageable> GetDamageables()
         {
-            if (_storage.TryRemoveProduct(product))
-                Console.WriteLine("Продукт удален.");
-            else
-                Console.WriteLine("Продукт не был удален.");
+            return new List<IDamageable>(_soldiers);
         }
 
-        public void AddProduct(Product product)
+        public void RemoveDeadSoldiers()
         {
-            if (_storage.TryAddProduct(product))
-                Console.WriteLine("Продукт добавлен.");
-            else
-                Console.WriteLine("Продукт не добавлен.");
-        }
-
-        public void ShowProducts()
-        {
-            Console.WriteLine($"Ассортимент супермаркета {Name}:");
-            _storage.ShowProducts();
-        }
-
-        public void ShowClients()
-        {
-            foreach (Client client in _clients)
+            foreach(RegularSoldier soldier in _soldiers)
             {
-                client.ShowInfo();
+                if (soldier.Health <= 0)
+                {
+                    Console.WriteLine($"{soldier.Name} пал.");
+                    _soldiers.Remove(soldier);
+                }
             }
-
-            Console.WriteLine("Клиентов в очереди: " + _clients.Count);
         }
-
-        public bool TryServiceClient()
-        {
-            if(_clients.Count == 0)
-            {
-                Console.WriteLine("Клиентов нет.");
-                return false;
-
-            }
-
-            ChoiseProducts(_clients.Peek());
-
-            if(_clients.Peek().TryBuyProducts(out int price))
-            {
-                Balanse += price;
-                _clients.Dequeue();
-                return true;
-            }
-
-            return false;
-        }
-
-        private void ChoiseProducts(Client client)
-        {
-            int maxProductsCount = 10;
-            int minProductsCount = 5;
-
-            int randomIndex = UserUtils.GenerateRandomNumber(minProductsCount, maxProductsCount);
-
-            while (randomIndex > 0)
-            {
-                _clients.Peek().AddProductToBasket(_storage.GetRandomProduct());
-                randomIndex--;
-            }
-        } 
     }
 
-    class Administrator
+    class Battlefield
     {
-        private Supermarket _supermarket;
+        private Platoon _firstPlatoon;
+        private Platoon _secondPlatoon;
 
-        public Administrator(Supermarket supermarket)
+        public Battlefield(string name, Platoon firstPlatoon, Platoon secondPlatoon)
         {
-            _supermarket = supermarket;
+            Name = name;
+            _firstPlatoon = firstPlatoon;
+            _secondPlatoon = secondPlatoon;
         }
 
-        public void InitializeAdministration()
+        public string Name { get; private set; }
+
+        public void InitialiseWar()
         {
-            const string AddProductCommand = "1";
-            const string RemoveProductCommand = "2";
-            const string AddClientCommand = "3";
-            const string ServiceClientCommand = "4";
-            const string ShowProductsCommand = "5";
-            const string ShowClientsCommand = "6";
-            const string ExitCommand = "7";
-                        
+            const string ShowBattleCommand = "1";
+            const string ExitCommand = "2";
+
+            Console.WriteLine($"Добро пожаловать на поле боя {Name}");
+
             bool isActive = true;
 
             while (isActive)
             {
-                Console.WriteLine("Меню администратора:");
-                Console.WriteLine($"{AddProductCommand} - добавить продукт\n" +
-                    $"{RemoveProductCommand} - удалить продукт\n" +
-                    $"{AddClientCommand} - добавить клиента\n" +
-                    $"{ServiceClientCommand} - обслужить клиента\n" +
-                    $"{ShowProductsCommand} - показать продукты\n" +
-                    $"{ShowClientsCommand} - показать клиентов\n" +
-                    $"{ExitCommand} - выйти");
+                Console.WriteLine($"{ShowBattleCommand} - посмотреть бой\n{ExitCommand} - выйти");
                 Console.Write("Введите команду: ");
-                string adminInput = Console.ReadLine();
+                string userInput = Console.ReadLine();
 
-                switch (adminInput)
+                switch (userInput)
                 {
-                    case AddProductCommand:
-                        _supermarket.AddProduct(ReadProduct());
+                    case ShowBattleCommand:
+                        SimulateBattle();
                         break;
-
-                    case RemoveProductCommand:
-                        _supermarket.RemoveProduct(ReadProduct());
-                        break;
-
-                    case AddClientCommand:
-                        AddClient();
-                        break;
-
-                    case ServiceClientCommand:
-                        InitiateClientService();
-                        break;
-
-                    case ShowProductsCommand:
-                        _supermarket.ShowProducts();
-                        break;
-
-                    case ShowClientsCommand:
-                        _supermarket.ShowClients();
-                        break;
-
                     case ExitCommand:
-                        Console.WriteLine("Вы вышли.");
                         isActive = false;
+                        Console.WriteLine("Вы вышли.");
                         break;
-
                     default:
                         Console.WriteLine("Неверный ввод.");
                         break;
@@ -185,292 +293,61 @@ namespace OOP
             }
         }
 
-        private void InitiateClientService()
+        private void SimulateBattle()
         {
-            if (_supermarket.TryServiceClient())
+            Platoon firstPlatoon = _firstPlatoon.Clone();
+            Platoon secondPlatoon = _secondPlatoon.Clone();
+
+            while (firstPlatoon.GetDamageables().Count > 0 && secondPlatoon.GetDamageables().Count > 0) 
             {
-                Console.WriteLine("Клиент обслужен");
-                Console.WriteLine($"Баланс магазина: {_supermarket.Balanse}");
-            }
-            
-        }
-
-        private void AddClient()
-        {
-            if (_supermarket.TryAddClient(ReadClient()))
-                Console.WriteLine("Клиент добавлен.");
-            else
-                Console.WriteLine("Клиент не был добавлен.");
-        }
-
-        private Client ReadClient()
-        {
-            Console.Write("Введите имя клиента: ");
-            string clientName = Console.ReadLine();
-            Console.Write("Введите сумму клиента: ");
-            int clientMoney = ReadInt();
-
-            return new Client(clientName, clientMoney);
-        }
-
-        private Product ReadProduct()
-        {
-            Console.Write("Введите название продукта: ");
-            string productName = Console.ReadLine();
-            Console.Write("Введите цену продукта: ");
-            int productPrise = ReadInt();
-
-            return new Product(productName, productPrise);
-        }
-
-        private int ReadInt()
-        {
-            int input = 0;
-
-            while (int.TryParse(Console.ReadLine(), out input) == false || input < 0)
-            {
-                Console.WriteLine("Ошибка ввода.");
+                SimulateRound(firstPlatoon, secondPlatoon);
             }
 
-            return input;
-        }
-    }
+            DetermineWinner(firstPlatoon, secondPlatoon);
+        }               
 
-    class Product
-    {
-        public Product(string name, int price)
+        private void SimulateRound(Platoon firstPlatoon, Platoon secondPlatoon)
         {
-            Name = name;
-            Price = price;
+            firstPlatoon.Attack(secondPlatoon.GetDamageables());
+            secondPlatoon.RemoveDeadSoldiers();
+
+            secondPlatoon.Attack(firstPlatoon.GetDamageables());
+            firstPlatoon.RemoveDeadSoldiers();
         }
 
-        public string Name { get; private set; }
-        public int Price { get; private set; }
-
-        public override bool Equals(object obj)
+        private void DetermineWinner(Platoon firstPlatoon, Platoon secondPlatoon)
         {
-            if (obj == null || GetType() != obj.GetType())
+            if (firstPlatoon.GetDamageables().Count > 0)
             {
-                return false;
+                Console.WriteLine($"{firstPlatoon.Name} победил.");
             }
-
-            Product other = obj as Product;
-
-            return Name.ToLower() == other.Name.ToLower() && Price == other.Price;
-        }
-
-        public Product Clone()
-        {
-            return new Product(Name, Price);
-        }
-
-        public void Show()
-        {
-            Console.WriteLine($"Название: {Name} Цена: {Price}");
-        }
-    }
-
-    class Client
-    {
-        private Bag _bag;
-        private Basket _basket;
-
-        public Client(string name, int money)
-        {
-            Name = name;
-            Money = money;
-            _bag = new Bag();
-            _basket = new Basket();
-        }
-
-        public string Name { get; private set; }
-        public int Money { get; private set; }
-
-        public void ShowInfo()
-        {
-            Console.WriteLine($"Имя - {Name}");
-        }
-
-        public void AddProductToBasket(Product product)
-        {
-            if (_basket.TryAddProduct(product))
+            else if(secondPlatoon.GetDamageables().Count > 0)
             {
-                Console.WriteLine($"{Name} добавил в корзину {product.Name}");
-            }
-        }
-
-        public bool TryBuyProducts(out int money)
-        {
-            RemoveExcessProducts();
-
-            if(_basket.GetCount() > 0)
-            {
-                Money -= _basket.TotalPrice;
-                _bag.AddProducts(_basket.GetProducts());
-                money = _basket.TotalPrice;
-                _basket.Clear();
-
-                Console.WriteLine($"{Name} купил:");
-                _bag.ShowProducts();
-            }
-
-            money = 0;
-            return true;
-        }
-
-        private void RemoveExcessProducts()
-        {
-            while (_basket.TotalPrice > Money && _basket.GetCount() > 0)
-            {
-                int randomIndex = UserUtils.GenerateRandomNumber(0, _basket.GetCount());
-
-                _basket.RemoveProduct(randomIndex);
+                Console.WriteLine($"{secondPlatoon.Name} победил.");
             }
         }
     }
 
-    abstract class ProductContainer
+    class BattlefieldCreator
     {
-        protected List<Product> _products;
-
-        protected ProductContainer()
+        public Battlefield Create()
         {
-            _products = new List<Product>();
+            return new Battlefield("Америка", new Platoon(CreateSoldiers(), "Взвод 1"), new Platoon(CreateSoldiers(), "Взвод 2"));
         }
 
-        public virtual bool TryAddProduct(Product product)
+        private List<RegularSoldier> CreateSoldiers()
         {
-            if (product != null)
-            {
-                _products.Add(product);
-                return true;
-            }
+            return new List<RegularSoldier> {
 
-            return false;
-        }
-
-        public bool TryRemoveProduct(Product product)
-        {
-            if (product != null)
-            {
-                foreach (Product productInList in _products)
-                {
-                    if (productInList.Equals(product))
-                    {
-                        _products.Remove(productInList);
-                        return true;
-                    }
-                }
-            }
-
-            return false;
-        }
-
-        public void ShowProducts()
-        {
-            foreach (Product product in _products)
-            {
-                product.Show();
-            }
-        }
-
-        public int GetCount()
-        {
-            return _products.Count;
-        }
-
-    }
-
-    class Basket : ProductContainer
-    {
-        public Basket() : base()
-        {
-            TotalPrice = 0;
-        }
-
-        public int TotalPrice { get; private set; }
-
-        public void Clear()
-        {
-            _products.Clear();
-            TotalPrice = 0;
-        }
-
-        public override bool TryAddProduct(Product product)
-        {
-            if (base.TryAddProduct(product))
-            {
-                TotalPrice += product.Price;
-                return true;
-            }
-
-            return false;
-        }
-
-        public List<Product> GetProducts()
-        {
-            return new List<Product>(_products);
-        }
-
-        public void RemoveProduct(int index)
-        {
-            TotalPrice -= _products[index].Price;
-            Console.WriteLine($"{_products[index].Name} - удален из корзины");
-            _products.Remove(_products[index]);
-        }
-    }
-
-    class Bag : ProductContainer
-    {
-        public Bag() : base() { }       
-
-        public void AddProducts(List<Product> products)
-        {
-            if (_products != null)
-            {
-                _products.AddRange(products);                
-            }
-        }
-    }
-
-    class Storage : ProductContainer
-    {
-        public Storage(List<Product> products)
-        {
-            _products = products;
-        }
-
-        public Product GetRandomProduct()
-        {
-            int randomProductIndex = UserUtils.GenerateRandomNumber(0, _products.Count);
-
-            return _products[randomProductIndex].Clone();
-        }
-    }
-
-    class SupermarketCreator
-    {
-        public Supermarket Create()
-        {
-            Queue<Client> clients = new Queue<Client>();
-            List<Product> products = new List<Product>();
-
-            clients.Enqueue(new Client("Василий", 1000));
-            clients.Enqueue(new Client("Антон", 2000));
-            clients.Enqueue(new Client("Игорь", 6000));
-            clients.Enqueue(new Client("Илья", 1000));
-            clients.Enqueue(new Client("Настя", 4000));
-            clients.Enqueue(new Client("Екатерина", 1000));
-
-            products.Add(new Product("Яблоко", 100));
-            products.Add(new Product("Банан", 150));
-            products.Add(new Product("Груша", 200));
-            products.Add(new Product("Собачий корм", 300));
-            products.Add(new Product("Сосиски", 500));
-            products.Add(new Product("Хлеб", 100));
-            products.Add(new Product("Молоко", 130));
-
-            return new Supermarket("Ашан", clients, new Storage(products));
+                new RegularSoldier("Обычный солдат 1"),
+                new RegularSoldier("Обычный солдат 2"),
+                new SniperSoldier("Солдат с множителем урона 1",3),
+                new SniperSoldier("Солдат с множителем урона 2",3),
+                new MultiTargetSoldier("Солдат атакующий 3-целей без повторения 1",3),
+                new MultiTargetSoldier("Солдат атакующий 4-целей без повторения 2",4),
+                new ScatterSoldier("Солдат атакующий 3-целей c повторениями 1",3),
+                new ScatterSoldier("Солдат атакующий 4-целей c повторениями 2",4)
+            };
         }
     }
 
