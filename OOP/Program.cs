@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -13,7 +13,7 @@ namespace OOP
 
             BattlefieldCreator creator = new BattlefieldCreator();
             Battlefield battlefield = creator.Create();
-            battlefield.InitialiseWar();
+            battlefield.SimulateWar();
         }
     }
 
@@ -43,7 +43,7 @@ namespace OOP
             int currentDamage = damage - Armor;
 
             if (currentDamage > 0)
-            {                
+            {
                 Health -= currentDamage;
                 Console.WriteLine($"{Name} получил {currentDamage} урона. Осталось: {Health}");
             }
@@ -92,6 +92,11 @@ namespace OOP
                 target.TakeDamage(Damage * _damageMultiplier);
             }
         }
+
+        public override RegularSoldier Clone()
+        {
+            return new SniperSoldier(Name, _damageMultiplier);
+        }
     }
 
     class MultiTargetSoldier : RegularSoldier
@@ -103,7 +108,7 @@ namespace OOP
             _targetsCount = targetsCount;
         }
 
-        public List<IDamageable> GetRandomTargets(List<IDamageable> damageables)
+        private List<IDamageable> GetRandomTargets(List<IDamageable> damageables)
         {
             List<IDamageable> targets = new List<IDamageable>();
             IDamageable target;
@@ -113,7 +118,7 @@ namespace OOP
                 return damageables;
             }
 
-            for(int i = 0; i < _targetsCount; i++)
+            for (int i = 0; i < _targetsCount; i++)
             {
                 target = GetRandomTarget(damageables);
 
@@ -121,7 +126,7 @@ namespace OOP
                 {
                     continue;
                 }
-
+                
                 targets.Add(target);
             }
 
@@ -158,7 +163,7 @@ namespace OOP
             _targetsCount = targetsCount;
         }
 
-        public List<IDamageable> GetRandomTargets(List<IDamageable> damageables)
+        private List<IDamageable> GetRandomTargets(List<IDamageable> damageables)
         {
             List<IDamageable> targets = new List<IDamageable>();
 
@@ -208,6 +213,8 @@ namespace OOP
 
         public string Name { get; private set; }
 
+        public int GetDamageablesCount => _soldiers.Count;
+
         public void Attack(List<IDamageable> damageables)
         {
             Console.WriteLine($"{Name} атакует:");
@@ -222,7 +229,7 @@ namespace OOP
         {
             List<RegularSoldier> soldiers = new List<RegularSoldier>();
 
-            foreach(RegularSoldier soldier in _soldiers)
+            foreach (RegularSoldier soldier in _soldiers)
             {
                 soldiers.Add(soldier.Clone());
             }
@@ -237,12 +244,12 @@ namespace OOP
 
         public void RemoveDeadSoldiers()
         {
-            foreach(RegularSoldier soldier in _soldiers)
+            for(int i = _soldiers.Count - 1; i >= 0; i--)
             {
-                if (soldier.Health <= 0)
+                if (_soldiers[i].Health <= 0)
                 {
-                    Console.WriteLine($"{soldier.Name} пал.");
-                    _soldiers.Remove(soldier);
+                    Console.WriteLine($"{_soldiers[i].Name} пал.");
+                    _soldiers.Remove(_soldiers[i]);
                 }
             }
         }
@@ -262,7 +269,7 @@ namespace OOP
 
         public string Name { get; private set; }
 
-        public void InitialiseWar()
+        public void SimulateWar()
         {
             const string ShowBattleCommand = "1";
             const string ExitCommand = "2";
@@ -298,13 +305,13 @@ namespace OOP
             Platoon firstPlatoon = _firstPlatoon.Clone();
             Platoon secondPlatoon = _secondPlatoon.Clone();
 
-            while (firstPlatoon.GetDamageables().Count > 0 && secondPlatoon.GetDamageables().Count > 0) 
+            while (firstPlatoon.GetDamageablesCount > 0 && secondPlatoon.GetDamageablesCount > 0)
             {
                 SimulateRound(firstPlatoon, secondPlatoon);
             }
 
             DetermineWinner(firstPlatoon, secondPlatoon);
-        }               
+        }
 
         private void SimulateRound(Platoon firstPlatoon, Platoon secondPlatoon)
         {
@@ -317,11 +324,11 @@ namespace OOP
 
         private void DetermineWinner(Platoon firstPlatoon, Platoon secondPlatoon)
         {
-            if (firstPlatoon.GetDamageables().Count > 0)
+            if (firstPlatoon.GetDamageablesCount > 0)
             {
                 Console.WriteLine($"{firstPlatoon.Name} победил.");
             }
-            else if(secondPlatoon.GetDamageables().Count > 0)
+            else if (secondPlatoon.GetDamageablesCount > 0)
             {
                 Console.WriteLine($"{secondPlatoon.Name} победил.");
             }
