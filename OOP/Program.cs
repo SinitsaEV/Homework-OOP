@@ -118,16 +118,14 @@ namespace OOP
                 return damageables;
             }
 
-            for (int i = 0; i < _targetsCount; i++)
+            while(targets.Count < _targetsCount)
             {
                 target = GetRandomTarget(damageables);
 
-                if (targets.Contains(target))
+                if (targets.Contains(target) == false)
                 {
-                    continue;
+                    targets.Add(target);
                 }
-                
-                targets.Add(target);
             }
 
             return targets;
