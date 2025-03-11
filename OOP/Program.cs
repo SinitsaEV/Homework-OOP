@@ -212,10 +212,9 @@ namespace OOP
 
         private bool GetRandomIsMale()
         {
-            int max = 1;
-            int min = 0;
+            bool[] isMaleValues = new bool[] { false, true };
 
-            return UserUtils.GenerateRandomNumber(min, max) == max;
+            return isMaleValues[UserUtils.GenerateRandomNumber(isMaleValues.Length)];
         }
     }
 
@@ -226,6 +225,11 @@ namespace OOP
         public static int GenerateRandomNumber(int min, int max)
         {
             return s_random.Next(min, max + 1);
+        }
+
+        public static int GenerateRandomNumber(int max)
+        {
+            return s_random.Next(max);
         }
     }
 }
