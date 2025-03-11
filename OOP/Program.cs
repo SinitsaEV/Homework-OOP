@@ -11,170 +11,124 @@ namespace OOP
             Console.OutputEncoding = Encoding.Unicode;
             Console.InputEncoding = Encoding.Unicode;
 
-            Aquarium aquarium = new Aquarium(5);
-            Aquarist aquarist = new Aquarist(aquarium);
-            aquarist.Work();
+            ZooFabric zooFabric = new ZooFabric();
+            Zoo zoo = zooFabric.CreateZoo();
+            ZooAdministration zooAdministration = new ZooAdministration(zoo);
+            zooAdministration.OpenZoo();
         }
     }
 
-    class Fish
+    class Zoo
     {
-        public Fish(string name, int healse)
+        private List<Aviary> _aviaries;
+
+        public Zoo(string name, List<Aviary> aviaries)
         {
             Name = name;
-            Health = healse;
+            _aviaries = aviaries;
         }
 
         public string Name { get; private set; }
-        public int Health { get; private set; }
-       
+
+        public int AviarysCount => _aviaries.Count;
+
+        public void ShowAviarys()
+        {
+            for(int i = 0;  i < _aviaries.Count; i++)
+            {
+                Console.WriteLine(i + " " + _aviaries[i].Name);
+            }
+        }
+
+        public void ShowAviaryByIndex(int index)
+        {
+            _aviaries[index].Show();
+        }
+    }
+
+    class Aviary
+    {
+        private List<Animal> _animals;
+
+        private string _animalsSound;
+        private string _animalsType;
+
+        public Aviary(string name, List<Animal> animals)
+        {
+            Name = name;
+            _animals = animals;
+            _animalsSound = animals[0].Sound;
+            _animalsType = animals[0].Type;
+        }
+
+        public string Name { get; private set; }
+
+        public int AnimalsCount => _animals.Count;
+
         public void Show()
         {
-            Console.WriteLine($"Название: {Name} Возраст: {Health}");
+            int animalsIsMaleCount = GetIsMaleCount();
+            int animalsIsFemaleCount = _animals.Count - animalsIsMaleCount;
+
+            Console.WriteLine($"В вольере {Name} находится: {AnimalsCount} {_animalsType}, самцов: {animalsIsMaleCount}, самок: {animalsIsFemaleCount}, издают звук: {_animalsSound}");
         }
 
-        public void ReduceHealth()
+        private int GetIsMaleCount()
         {
-            if (Health > 0)
-                Health--;
-            else
-                Console.WriteLine($"Рыбка {Name} погибла.");
-        }
+            int isMaleCount = 0;
 
-        public override bool Equals(object obj)
-        {
-            if (obj == null)
-                return false;
-
-            if (!(obj is Fish other))
-                return false;
-
-            return Name.ToLower() == other.Name.ToLower() && Health == other.Health;
-        }
-    }
-
-    class Aquarium
-    {
-        private List<Fish> _fish;
-
-        public Aquarium(int capacity)
-        {
-            _fish = new List<Fish>
+            foreach(Animal animal in _animals)
             {
-                new Fish("Карась",4),
-                new Fish("Окунь",5),
-                new Fish("Сом",5),
-                new Fish("Линь",3)
-            };
-            Capacity = capacity;
-        }
-
-        public int Capacity { get; private set; }
-
-        public bool TryAddFish(Fish fish)
-        {
-            if(fish == null)
-            {
-               return false;
-            }
-
-            if(_fish.Count < Capacity)
-            {
-                _fish.Add(fish);
-                return true;
-            }
-
-            return false;
-        }
-
-        public bool TryRemoveFish(Fish fish)
-        {
-            foreach(Fish fishInList in _fish)
-            {
-                if (fishInList.Equals(fish))
+                if (animal.IsMale)
                 {
-                    _fish.Remove(fishInList);
-                    return true;
+                    isMaleCount++;
                 }
             }
 
-            return false;
-        }
-
-        public void RemoveDeadFish()
-        {
-            for (int i = _fish.Count - 1; i >= 0; i--)
-            {
-                if (_fish[i].Health <= 0)
-                {
-                    Console.WriteLine($"Рыбку {_fish[i].Name} смыли в туалет.");
-                    _fish.Remove(_fish[i]);
-                }
-            }           
-        }
-
-        public void ShowFish()
-        {
-            foreach(Fish fish in _fish)
-            {
-                fish.Show();
-            }
-        }
-
-        public void UpdateFishHealth()
-        {
-            foreach(Fish fish in _fish)
-            {
-                fish.ReduceHealth();
-            }
+            return isMaleCount;
         }
     }
 
-    class Aquarist
+    class Animal
     {
-        private Aquarium _aquarium;
-        private FishFactory _fishFactory;
-
-        public Aquarist(Aquarium aquarium)
+        public Animal(string type, bool isMale, string sound)
         {
-            _aquarium = aquarium;
-            _fishFactory = new FishFactory();
+            Type = type;
+            IsMale = isMale;
+            Sound = sound;
         }
 
-        public void Work()
-        {
-            const string AddCommand = "1";
-            const string RemoveCommand = "2";
-            const string PassedYearCommand = "3";
-            const string ExitCommand = "4";
+        public string Type { get; private set; }
+        public bool IsMale { get; private set; }
+        public string Sound { get; private set; }
+    }
 
+    class ZooAdministration
+    {
+        private Zoo _zoo;
+
+        public ZooAdministration(Zoo zoo)
+        {
+            _zoo = zoo;
+        }
+
+        public void OpenZoo()
+        {
+            const string SeeAviaryCommand = "1";
+            const string ExitCommand = "2";
+
+            Console.WriteLine($"Добро пожаловать в зоопарк {_zoo.Name}.");
             bool isActive = true;
 
             while (isActive)
             {
-                _aquarium.RemoveDeadFish();
-                _aquarium.ShowFish();
+                Console.WriteLine($"{SeeAviaryCommand} - подойти к вольеру\n{ExitCommand} - выйти");
+                string visitorInput = Console.ReadLine();
 
-                Console.WriteLine($"{AddCommand} - добавить рыбку\n" +
-                    $"{RemoveCommand} - удалить рыбку\n" +
-                    $"{PassedYearCommand} - пропустить год\n" +
-                    $"{ExitCommand} - выйти");
-
-                Console.Write("Введите команду: ");
-                string userInput = Console.ReadLine();
-
-                switch (userInput)
+                switch (visitorInput)
                 {
-                    case AddCommand:
-                        AddFish();
-                        break;
-
-                    case RemoveCommand:
-                        RemoveFish();
-                        break;
-
-                    case PassedYearCommand:
-                        _aquarium.UpdateFishHealth();
+                    case SeeAviaryCommand:
+                        SeeAviary();
                         break;
 
                     case ExitCommand:
@@ -183,59 +137,95 @@ namespace OOP
                         break;
 
                     default:
-                        Console.WriteLine("Неверный ввод.");
+                        Console.WriteLine("Неправильный ввод.");
                         break;
                 }
             }
         }
 
-        private void RemoveFish()
+        private void SeeAviary()
         {
-            if (_aquarium.TryRemoveFish(_fishFactory.GetFish()))
-            {
-                Console.WriteLine("Вы достали рыбку.");
-            }
+            _zoo.ShowAviarys();
+            _zoo.ShowAviaryByIndex(ReadAviaryIndex());
         }
 
-        private void AddFish()
+        private int ReadAviaryIndex()
         {
-            if (_aquarium.TryAddFish(_fishFactory.GetFish()))
+            int aviaryIndex = 0;
+
+            while (int.TryParse(Console.ReadLine(), out aviaryIndex) == false || aviaryIndex < 0 || aviaryIndex >= _zoo.AviarysCount)
             {
-                Console.WriteLine("Рыба добавлена.");
+                Console.WriteLine("Неверный ввод.");
             }
-        }       
+
+            return aviaryIndex;
+        }
     }
-
-    class FishFactory
+    
+    class ZooFabric
     {
-        public Fish GetFish()
+        public Zoo CreateZoo()
         {
-            Console.Write("Введите имя рыбки: ");
-            string name = Console.ReadLine();
-            Console.WriteLine("Введите здоровье рыбки: ");
-            int healse = GetInt();
-
-            return new Fish(name, healse);            
+            return new Zoo("Беловежская пуща",CreateZooAviaries());
         }
 
-        private int GetInt()
+        private List<Aviary> CreateZooAviaries()
         {
-            bool isCorrectInput = false;
-            int result = 0;
+            List<Aviary> aviaries = new List<Aviary>();
 
-            while (isCorrectInput == false)
+            string nameBison = "Зубр";
+            string soundOfBison = "Рев: Муууууууу";
+
+            string nameWildBoar = "Дикий кабан";
+            string soundOfWildBoar = "Грру-грру";
+
+            string nameRoeDeer = "Косуля";
+            string soundOfRoeDeer = "Тяф-тяф!";
+
+            string nameBadger = "Барсук";
+            string soundOfBadger = "Шшшш";
+
+            aviaries.Add(new Aviary("Подземное царство",CreateAnimals(nameBadger,soundOfBadger)));
+            aviaries.Add(new Aviary("Кабаньи угодья", CreateAnimals(nameWildBoar, soundOfWildBoar)));
+            aviaries.Add(new Aviary("Царство зубров", CreateAnimals(nameBison, soundOfBison)));
+            aviaries.Add(new Aviary("Лесная грация", CreateAnimals(nameRoeDeer, soundOfRoeDeer)));
+
+            return aviaries;
+        }
+
+        private List<Animal> CreateAnimals(string type, string sound)
+        {
+            List<Animal> animals = new List<Animal>();
+
+            int maxAnimalsCount = 100;
+            int minAnimalsCount = 10;
+
+            int animalsCount = UserUtils.GenerateRandomNumber(minAnimalsCount, maxAnimalsCount);
+            int animalsIsMaleCount = UserUtils.GenerateRandomNumber(minAnimalsCount, animalsCount);
+
+            for (int i = 0; i < animalsCount; i++, animalsIsMaleCount--)
             {
-                if (int.TryParse(Console.ReadLine(), out result) && result > 0)
+                if (animalsIsMaleCount > 0)
                 {
-                    isCorrectInput = true;
+                    animals.Add(new Animal(type, true, sound));
                 }
                 else
                 {
-                    Console.WriteLine("Неверный ввод.");
-                }
+                    animals.Add(new Animal(type, false, sound));
+                }                
             }
 
-            return result;
+            return animals;
+        }
+    }
+
+    class UserUtils
+    {
+        private static Random s_random = new Random();
+
+        public static int GenerateRandomNumber(int min, int max)
+        {
+            return s_random.Next(min, max);
         }
     }
 }
