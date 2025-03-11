@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -34,7 +34,7 @@ namespace OOP
 
         public void ShowAviarys()
         {
-            for(int i = 0;  i < _aviaries.Count; i++)
+            for (int i = 0; i < _aviaries.Count; i++)
             {
                 Console.WriteLine(i + " " + _aviaries[i].Name);
             }
@@ -77,7 +77,7 @@ namespace OOP
         {
             int isMaleCount = 0;
 
-            foreach(Animal animal in _animals)
+            foreach (Animal animal in _animals)
             {
                 if (animal.IsMale)
                 {
@@ -161,12 +161,12 @@ namespace OOP
             return aviaryIndex;
         }
     }
-    
+
     class ZooFabric
     {
         public Zoo CreateZoo()
         {
-            return new Zoo("Беловежская пуща",CreateZooAviaries());
+            return new Zoo("Беловежская пуща", CreateZooAviaries());
         }
 
         private List<Aviary> CreateZooAviaries()
@@ -185,7 +185,7 @@ namespace OOP
             string nameBadger = "Барсук";
             string soundOfBadger = "Шшшш";
 
-            aviaries.Add(new Aviary("Подземное царство",CreateAnimals(nameBadger,soundOfBadger)));
+            aviaries.Add(new Aviary("Подземное царство", CreateAnimals(nameBadger, soundOfBadger)));
             aviaries.Add(new Aviary("Кабаньи угодья", CreateAnimals(nameWildBoar, soundOfWildBoar)));
             aviaries.Add(new Aviary("Царство зубров", CreateAnimals(nameBison, soundOfBison)));
             aviaries.Add(new Aviary("Лесная грация", CreateAnimals(nameRoeDeer, soundOfRoeDeer)));
@@ -201,21 +201,21 @@ namespace OOP
             int minAnimalsCount = 10;
 
             int animalsCount = UserUtils.GenerateRandomNumber(minAnimalsCount, maxAnimalsCount);
-            int animalsIsMaleCount = UserUtils.GenerateRandomNumber(minAnimalsCount, animalsCount);
 
-            for (int i = 0; i < animalsCount; i++, animalsIsMaleCount--)
+            for (int i = 0; i < animalsCount; i++)
             {
-                if (animalsIsMaleCount > 0)
-                {
-                    animals.Add(new Animal(type, true, sound));
-                }
-                else
-                {
-                    animals.Add(new Animal(type, false, sound));
-                }                
+                animals.Add(new Animal(type, GetRandomIsMale(), sound));
             }
 
             return animals;
+        }
+
+        private bool GetRandomIsMale()
+        {
+            int max = 1;
+            int min = 0;
+
+            return UserUtils.GenerateRandomNumber(min, max) == max;
         }
     }
 
@@ -225,7 +225,7 @@ namespace OOP
 
         public static int GenerateRandomNumber(int min, int max)
         {
-            return s_random.Next(min, max);
+            return s_random.Next(min, max + 1);
         }
     }
 }
