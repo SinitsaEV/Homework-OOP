@@ -11,124 +11,377 @@ namespace OOP
             Console.OutputEncoding = Encoding.Unicode;
             Console.InputEncoding = Encoding.Unicode;
 
-            ZooFabric zooFabric = new ZooFabric();
-            Zoo zoo = zooFabric.CreateZoo();
-            ZooAdministration zooAdministration = new ZooAdministration(zoo);
-            zooAdministration.OpenZoo();
+            ServiceStationFabric serviceStationFabric = new ServiceStationFabric();
+            ServiceStationAdministrator administrator = new ServiceStationAdministrator(serviceStationFabric.CreateServiceStation(), serviceStationFabric);
+            administrator.OpenServiceStation();
         }
     }
 
-    class Zoo
+    class Detail
     {
-        private List<Aviary> _aviaries;
-
-        public Zoo(string name, List<Aviary> aviaries)
+        public Detail(string name, bool isBroken, int prise)
         {
             Name = name;
-            _aviaries = aviaries;
+            IsBroken = isBroken;
+            Prise = prise;
         }
 
         public string Name { get; private set; }
+        public bool IsBroken {  get; private set; }
+        public int Prise { get; private set; }
 
-        public int AviarysCount => _aviaries.Count;
-
-        public void ShowAviarys()
+        public override bool Equals(object obj)
         {
-            for(int i = 0;  i < _aviaries.Count; i++)
+            if(obj ==  null || GetType() != obj.GetType())
             {
-                Console.WriteLine(i + " " + _aviaries[i].Name);
-            }
+                return false;
+            } 
+
+            Detail other = obj as Detail;
+
+            return Name == other.Name;
         }
-
-        public void ShowAviaryByIndex(int index)
-        {
-            _aviaries[index].Show();
-        }
-    }
-
-    class Aviary
-    {
-        private List<Animal> _animals;
-
-        private string _animalsSound;
-        private string _animalsType;
-
-        public Aviary(string name, List<Animal> animals)
-        {
-            Name = name;
-            _animals = animals;
-            _animalsSound = animals[0].Sound;
-            _animalsType = animals[0].Type;
-        }
-
-        public string Name { get; private set; }
-
-        public int AnimalsCount => _animals.Count;
 
         public void Show()
         {
-            int animalsIsMaleCount = GetIsMaleCount();
-            int animalsIsFemaleCount = _animals.Count - animalsIsMaleCount;
-
-            Console.WriteLine($"В вольере {Name} находится: {AnimalsCount} {_animalsType}, самцов: {animalsIsMaleCount}, самок: {animalsIsFemaleCount}, издают звук: {_animalsSound}");
+            Console.WriteLine(Name);
         }
 
-        private int GetIsMaleCount()
+        public Detail Clone()
         {
-            int isMaleCount = 0;
+            return new Detail(Name, IsBroken, Prise);
+        }
+    }
 
-            foreach(Animal animal in _animals)
+    class Car
+    {
+        private List<Detail> _details;
+
+        public Car(List<Detail> details, string brand)
+        {
+            _details = details;
+            Brand = brand;
+        }
+
+        public string Brand {  get; private set; }    
+        
+        public List<Detail> GetDetails()
+        {
+            return _details;
+        }
+
+        public bool TryRemoveDetail(Detail brokenDetail)
+        {
+            if(brokenDetail == null)
             {
-                if (animal.IsMale)
+                return false;
+            }
+
+            for(int i = 0; i < _details.Count; i++)
+            {
+                if (_details[i].Equals(brokenDetail))
                 {
-                    isMaleCount++;
+                    _details.Remove(_details[i]);
+                    return true;
                 }
             }
 
-            return isMaleCount;
+            return false;
+        }
+
+        public bool TryAddDetail(Detail detail)
+        {
+            if(detail != null)
+            {
+                _details.Add(detail);
+                return true;
+            }
+
+            return false;
         }
     }
 
-    class Animal
+    class ServiceStation
     {
-        public Animal(string type, bool isMale, string sound)
+        private Queue<Client> _clients;
+        private Storage _storage;
+
+        public ServiceStation(Queue<Client> clients, Storage storage)
         {
-            Type = type;
-            IsMale = isMale;
-            Sound = sound;
+            _clients = clients;
+            _storage = storage;
+            RepairCost = 1000;
+            FineAmount = 500;
+            Balanse = 0;
         }
 
-        public string Type { get; private set; }
-        public bool IsMale { get; private set; }
-        public string Sound { get; private set; }
+        public int Balanse {  get; private set; }
+
+        public int RepairCost {  get; private set; }
+
+        public int FineAmount {  get; private set; }
+
+        public bool TryAddClient(Client client)
+        {
+            if(client != null)
+            {
+                _clients.Enqueue(client);
+                return true;
+            }
+
+            return false;
+        }
+
+        public bool TryServeClient()
+        {
+            Client client = _clients.Peek();
+
+            if (TryRepairCar(client.GetCar()))
+            {
+                _clients.Dequeue();
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool IsRepairAccepted(string message)
+        {
+            const string Agree = "1";
+            const string Disagree = "2";
+
+            Console.WriteLine(message);
+
+            while (true)
+            {
+                Console.WriteLine($"{Agree} - согласен\n{Disagree} - не согласен");
+                string clientInput = Console.ReadLine();
+
+                switch (clientInput)
+                {
+                    case Agree:
+                        return true;
+
+                    case Disagree:
+                        return false;
+
+                    default:
+                        Console.WriteLine("Неверный ввод.");
+                        break;
+                }
+            }
+        }
+
+        private void PayPenalty(int penalty)
+        {
+            if(penalty > Balanse)
+            {
+                Balanse = 0;
+                Console.WriteLine(" Баланс на 0 сервис банкрот. ");
+            }
+            else
+            {
+                Balanse -= penalty;
+                Console.WriteLine($"Автосервис заплатил штраф {penalty}");
+            }
+        }
+
+        private void ShowDetails(List<Detail> details)
+        {
+            foreach(Detail detail in details)
+            {
+                detail.Show();
+            }
+        }
+
+        private bool TryRepairCar(Car car)
+        {
+            List<Detail> brokenDetails = GetBrokenDetails(car);
+            Console.WriteLine("Эти детали сломались:");
+            ShowDetails(brokenDetails);
+
+            if (IsRepairAccepted("Желаете починить машину?") == false)
+            {
+                PayPenalty(FineAmount);
+                return false;
+            }
+
+            for (int i = 0; i < brokenDetails.Count; i++)
+            {
+                if (IsRepairAccepted($"Желаете починить {brokenDetails[i].Name}?") == false)
+                {
+                    PayPenalty(FineAmount * GetBrokenDetails(car).Count);
+                    return true;
+                }
+
+                if (TryReplaceDetail(brokenDetails[i], car, out int detailRepairCost))
+                {
+                    _clients.Peek().Pay(detailRepairCost);
+                    Console.WriteLine($"Вы заплатили {detailRepairCost}");
+                    Balanse += detailRepairCost;
+                }
+                else
+                {
+                    Console.WriteLine("Деталь не смогли поменять.");
+                    PayPenalty(FineAmount * GetBrokenDetails(car).Count);
+                    return true;
+                }
+            }
+
+            return true;
+        }               
+
+        private List<Detail> GetBrokenDetails(Car car)
+        {
+            List<Detail> broken = new List<Detail>();
+
+            foreach(Detail detail in car.GetDetails())
+            {
+                if (detail.IsBroken)
+                {
+                    broken.Add(detail);
+                }
+            }
+
+            return broken;
+        }
+
+        private bool TryReplaceDetail(Detail brokenDetail, Car car, out int detailRepairCost)
+        {
+            detailRepairCost = 0;
+
+            if (_storage.TryGetDetail(brokenDetail, out Detail serviceableDetail) == false)
+            {
+                Console.WriteLine("Такой детали нет на складе.");
+                return false;
+            }
+
+            int totalCost = GetDetailRepairCost(serviceableDetail);
+
+            if (_clients.Peek().HasEnoughMoney(totalCost) == false)
+            {
+                Console.WriteLine("У киента недостаточно денег для замены детали.");
+                return false;
+            }
+
+            if(car.TryRemoveDetail(serviceableDetail) == false)
+            {
+                Console.WriteLine("Деталь не получилось снять.");
+                return false;
+            }
+
+            if(car.TryAddDetail(serviceableDetail) == false)
+            {
+                Console.WriteLine("Деталь не получилось поставить.");
+                car.TryAddDetail(brokenDetail);
+                return false;
+            }
+
+            detailRepairCost = totalCost;
+            return true ;
+        }
+
+        private int GetDetailRepairCost(Detail detail)
+        {
+            return RepairCost + detail.Prise;
+        }
     }
 
-    class ZooAdministration
+    class Storage
     {
-        private Zoo _zoo;
+        private Dictionary<Detail, int> _details;
 
-        public ZooAdministration(Zoo zoo)
+        public Storage(Dictionary<Detail, int> details)
         {
-            _zoo = zoo;
+            _details = details;
         }
 
-        public void OpenZoo()
+        public bool TryGetDetail(Detail brokenDetail,out Detail serviceableDetail)
         {
-            const string SeeAviaryCommand = "1";
-            const string ExitCommand = "2";
+            foreach(Detail detail in _details.Keys)
+            {
+                if (detail.Equals(brokenDetail) && _details[detail] > 0)
+                {
+                    _details[detail]--;
+                    serviceableDetail = detail.Clone();
+                    return true;
+                }
+            }
 
-            Console.WriteLine($"Добро пожаловать в зоопарк {_zoo.Name}.");
+            serviceableDetail = null;
+            return false;
+        }
+    }
+
+    class Client
+    {
+        private Car _car;
+
+        public Client(Car car, int money, string name)
+        {
+            _car = car;
+            Money = money;
+            Name = name;
+        }
+
+        public int Money { get; private set; }
+        public string Name { get; private set; }
+
+        public Car GetCar()
+        {
+            return _car;
+        }
+
+        public bool HasEnoughMoney(int money)
+        {
+            return Money >= money;
+        } 
+        
+        public void Pay(int money)
+        {
+            Money -= money;
+        }
+    }
+
+    class ServiceStationAdministrator
+    {
+        private ServiceStation _serviceStation;
+        private ServiceStationFabric _serviceStationFabric;
+
+        public ServiceStationAdministrator(ServiceStation serviceStation, ServiceStationFabric serviceStationFabric)
+        {
+            _serviceStation = serviceStation;
+            _serviceStationFabric = serviceStationFabric;
+        }
+
+        public void OpenServiceStation()
+        {
+            const string AddClientCommand = "1";
+            const string ServeClientCommand = "2";
+            const string AddDetailsToStorageCommand = "3";
+            const string ExitCommand = "4";
+
             bool isActive = true;
 
             while (isActive)
             {
-                Console.WriteLine($"{SeeAviaryCommand} - подойти к вольеру\n{ExitCommand} - выйти");
-                string visitorInput = Console.ReadLine();
+                Console.WriteLine($"{AddClientCommand} - добавить клиента\n" +
+                    $"{ServeClientCommand} - обслужить клиента\n" +
+                    $"{AddDetailsToStorageCommand} - добавить детали на склад\n" +
+                    $"{ExitCommand} - выйти");
+                string adminInput = Console.ReadLine();
 
-                switch (visitorInput)
+                switch (adminInput)
                 {
-                    case SeeAviaryCommand:
-                        SeeAviary();
+                    case AddClientCommand:
+                        AddClient();
+                        break;
+
+                    case ServeClientCommand:
+                        InitiateClientService();
+                        break;
+
+                    case AddDetailsToStorageCommand:
                         break;
 
                     case ExitCommand:
@@ -137,85 +390,177 @@ namespace OOP
                         break;
 
                     default:
-                        Console.WriteLine("Неправильный ввод.");
+                        Console.WriteLine("Неверный ввод.");
                         break;
                 }
             }
         }
 
-        private void SeeAviary()
+        private void InitiateClientService()
         {
-            _zoo.ShowAviarys();
-            _zoo.ShowAviaryByIndex(ReadAviaryIndex());
+            if (_serviceStation.TryServeClient())
+            {
+                Console.WriteLine("Клиент обслужен.");
+                Console.WriteLine($"Баланс: {_serviceStation.Balanse}");
+            }
         }
 
-        private int ReadAviaryIndex()
+        private void AddClient()
         {
-            int aviaryIndex = 0;
+            Client client = _serviceStationFabric.CreateClient();
 
-            while (int.TryParse(Console.ReadLine(), out aviaryIndex) == false || aviaryIndex < 0 || aviaryIndex >= _zoo.AviarysCount)
+            if (_serviceStation.TryAddClient(client))
             {
-                Console.WriteLine("Неверный ввод.");
+                Console.WriteLine("Клиент добавлен.");
             }
-
-            return aviaryIndex;
+            else
+            {
+                Console.WriteLine("Клиент не был добавлен.");
+            }
         }
     }
-    
-    class ZooFabric
+
+    class ServiceStationFabric
     {
-        public Zoo CreateZoo()
+        private int _maxDetailsPrise = 5000;
+        private int _minDetailsPrise = 1000;
+
+        private List<string> _detailsName = new List<string>
         {
-            return new Zoo("Беловежская пуща",CreateZooAviaries());
+                "Ремень",
+                "Колодка",
+                "Стекло",
+                "Колесо",
+                "Поршень",
+                "Коробка передачь"
+        };
+
+        public ServiceStation CreateServiceStation()
+        {
+            return new ServiceStation(CreateClients(), CreateStorage());
         }
 
-        private List<Aviary> CreateZooAviaries()
+        private Queue<Client> CreateClients()
         {
-            List<Aviary> aviaries = new List<Aviary>();
+            Queue<Client> clients = new Queue<Client>(new List<Client>());
 
-            string nameBison = "Зубр";
-            string soundOfBison = "Рев: Муууууууу";
+            int maxClientsCount = 20;
+            int minClientsCount = 5;
 
-            string nameWildBoar = "Дикий кабан";
-            string soundOfWildBoar = "Грру-грру";
+            int clientsCount = UserUtils.GenerateRandomNumber(minClientsCount, maxClientsCount);
 
-            string nameRoeDeer = "Косуля";
-            string soundOfRoeDeer = "Тяф-тяф!";
-
-            string nameBadger = "Барсук";
-            string soundOfBadger = "Шшшш";
-
-            aviaries.Add(new Aviary("Подземное царство",CreateAnimals(nameBadger,soundOfBadger)));
-            aviaries.Add(new Aviary("Кабаньи угодья", CreateAnimals(nameWildBoar, soundOfWildBoar)));
-            aviaries.Add(new Aviary("Царство зубров", CreateAnimals(nameBison, soundOfBison)));
-            aviaries.Add(new Aviary("Лесная грация", CreateAnimals(nameRoeDeer, soundOfRoeDeer)));
-
-            return aviaries;
-        }
-
-        private List<Animal> CreateAnimals(string type, string sound)
-        {
-            List<Animal> animals = new List<Animal>();
-
-            int maxAnimalsCount = 100;
-            int minAnimalsCount = 10;
-
-            int animalsCount = UserUtils.GenerateRandomNumber(minAnimalsCount, maxAnimalsCount);
-            int animalsIsMaleCount = UserUtils.GenerateRandomNumber(minAnimalsCount, animalsCount);
-
-            for (int i = 0; i < animalsCount; i++, animalsIsMaleCount--)
+            for (int i = 0; i < clientsCount; i++)
             {
-                if (animalsIsMaleCount > 0)
+                clients.Enqueue(CreateClient());
+            }
+
+            return clients;
+        }
+
+        public Client CreateClient()
+        {
+            int maxClientMoney = 50000;
+            int minClientMoney = 5000;
+            int clientMoney = UserUtils.GenerateRandomNumber(minClientMoney, maxClientMoney);
+
+            string[] clientsName = new string[]
+            {
+                "Евгений",
+                "Иван",
+                "Владислав",
+                "Владимир",
+                "Илья"
+            };
+
+            int clientNameRandomIndex = UserUtils.GenerateRandomNumber(0, clientsName.Length);
+
+            return new Client(CreateCar(), clientMoney, clientsName[clientNameRandomIndex]);
+        }
+
+        private Car CreateCar()
+        {
+            string[] brandsName = new string[]
+            {
+                "Audi",
+                "BMW",
+                "Citroën",
+                "Peugeot",
+                "Renault"
+            };
+
+            int randomBrandNameIndex = UserUtils.GenerateRandomNumber(0, brandsName.Length);
+
+            return new Car(CreateCarDetails(), brandsName[randomBrandNameIndex]);
+        }
+
+        private Storage CreateStorage()
+        {
+            Dictionary<Detail, int> details = new Dictionary<Detail, int>();
+            int maxDetailsInStorageCount = 5;
+            int minDetailsInStorageCount = 1;
+
+            foreach (Detail detail in CreateStorageDetails())
+            {
+                int randomDetailsCount = UserUtils.GenerateRandomNumber(minDetailsInStorageCount, maxDetailsInStorageCount);
+                details.Add(detail, randomDetailsCount);
+            }
+
+            return new Storage(details);
+        }
+
+        private List<Detail> CreateStorageDetails()
+        {
+            List<Detail> details = new List<Detail>();
+
+            foreach (string detaileName in _detailsName)
+            {
+                int detailePrise = UserUtils.GenerateRandomNumber(_minDetailsPrise, _maxDetailsPrise);
+                details.Add(new Detail(detaileName, false, detailePrise));
+            }
+
+            return details;
+        }
+
+        private List<Detail> CreateCarDetails()
+        {
+            List<Detail> details = new List<Detail>();
+
+            bool[] isBrokenArray = new bool[] { true, false };
+            bool isActive = true;
+
+            while (isActive)
+            {
+                foreach (string detaileName in _detailsName)
                 {
-                    animals.Add(new Animal(type, true, sound));
+                    int detailePrise = UserUtils.GenerateRandomNumber(_minDetailsPrise, _maxDetailsPrise);
+                    int randomIndex = UserUtils.GenerateRandomNumber(0, isBrokenArray.Length);
+                    details.Add(new Detail(detaileName, isBrokenArray[randomIndex], detailePrise));
+                }
+
+                if (IsContainsBrokenDetails(details))
+                {
+                    isActive = false;
                 }
                 else
                 {
-                    animals.Add(new Animal(type, false, sound));
-                }                
+                    details.Clear();
+                }
+            }            
+
+            return details;
+        }
+
+        private bool IsContainsBrokenDetails(List<Detail> details)
+        {
+            foreach (Detail detail in details)
+            {
+                if (detail.IsBroken)
+                {
+                    return true;
+                }
             }
 
-            return animals;
+            return false;
         }
     }
 
