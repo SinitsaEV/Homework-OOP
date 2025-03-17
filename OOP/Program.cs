@@ -294,27 +294,53 @@ namespace OOP
 
     class Storage
     {
-        private Dictionary<Detail, int> _details;
+        private List<DetailStock> _details;
 
-        public Storage(Dictionary<Detail, int> details)
+        public Storage(List<DetailStock> details)
         {
             _details = details;
         }
 
         public bool TryGetDetail(Detail brokenDetail,out Detail serviceableDetail)
         {
-            foreach(Detail detail in _details.Keys)
+            foreach(DetailStock detailStock in _details)
             {
-                if (detail.Equals(brokenDetail) && _details[detail] > 0)
+                if (detailStock.GetDetail().Equals(brokenDetail) && detailStock.Count > 0)
                 {
-                    _details[detail]--;
-                    serviceableDetail = detail.Clone();
+                    detailStock.ReduceCount();
+                    serviceableDetail = detailStock.GetDetail();
                     return true;
                 }
             }
 
             serviceableDetail = null;
             return false;
+        }
+    }
+
+    class DetailStock
+    {
+        private Detail _detail; 
+
+        public DetailStock(Detail detail, int count)
+        {
+            _detail = detail;
+            Count = count;
+        }
+
+        public int Count { get; private set; }
+
+        public Detail GetDetail()
+        {
+            return _detail.Clone();
+        }
+
+        public void ReduceCount()
+        {
+            if(Count > 0)
+            {
+                Count--;
+            }
         }
     }
 
@@ -450,14 +476,14 @@ namespace OOP
 
         private Storage CreateStorage()
         {
-            Dictionary<Detail, int> details = new Dictionary<Detail, int>();
+            List<DetailStock> details = new List<DetailStock>();
             int maxDetailsInStorageCount = 5;
             int minDetailsInStorageCount = 1;
 
             foreach (Detail detail in CreateStorageDetails())
             {
                 int randomDetailsCount = UserUtils.GenerateRandomNumber(minDetailsInStorageCount, maxDetailsInStorageCount);
-                details.Add(detail, randomDetailsCount);
+                details.Add(new DetailStock(detail, randomDetailsCount));
             }
 
             return new Storage(details);
