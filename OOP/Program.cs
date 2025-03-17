@@ -1,5 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.ConstrainedExecution;
 using System.Text;
 
 namespace OOP
@@ -67,7 +69,7 @@ namespace OOP
         
         public List<Detail> GetDetails()
         {
-            return _details;
+            return _details.ToList();
         }
 
         public bool TryRemoveDetail(Detail brokenDetail)
@@ -103,12 +105,12 @@ namespace OOP
 
     class ServiceStation
     {
-        private Queue<Client> _clients;
+        private Queue<Car> _cars;
         private Storage _storage;
 
-        public ServiceStation(Queue<Client> clients, Storage storage)
+        public ServiceStation(Queue<Car> cars, Storage storage)
         {
-            _clients = clients;
+            _cars = cars;
             _storage = storage;
             RepairCost = 1000;
             FineAmount = 500;
@@ -121,55 +123,57 @@ namespace OOP
 
         public int FineAmount {  get; private set; }
 
-        public bool TryAddClient(Client client)
+        public bool TryAddCar(Car car)
         {
-            if(client != null)
+            if(car != null)
             {
-                _clients.Enqueue(client);
+                _cars.Enqueue(car);
                 return true;
             }
 
             return false;
         }
 
-        public bool TryServeClient()
+        public bool TryServeCar()
         {
-            Client client = _clients.Peek();
+            Car car = _cars.Dequeue();
 
-            if (TryRepairCar(client.GetCar()))
-            {
-                _clients.Dequeue();
-                return true;
-            }
-
-            return false;
+            return TryRepairCar(car);
         }
 
         private bool IsRepairAccepted(string message)
         {
-            const string Agree = "1";
-            const string Disagree = "2";
+            const string AgreeCommand = "1";
+            const string DisagreeCommand = "2";
 
             Console.WriteLine(message);
+            bool isActive = true;
+            bool isRepairAccepted = false;
 
-            while (true)
+            while (isActive)
             {
-                Console.WriteLine($"{Agree} - согласен\n{Disagree} - не согласен");
+                Console.WriteLine($"{AgreeCommand} - согласен\n{DisagreeCommand} - не согласен");
                 string clientInput = Console.ReadLine();
 
                 switch (clientInput)
                 {
-                    case Agree:
-                        return true;
+                    case AgreeCommand:
+                        isActive = false;
+                        isRepairAccepted = true;
+                        break;
 
-                    case Disagree:
-                        return false;
+                    case DisagreeCommand:
+                        isActive = false;
+                        isRepairAccepted = false;
+                        break;
 
                     default:
                         Console.WriteLine("Неверный ввод.");
                         break;
                 }
             }
+
+            return isRepairAccepted;
         }
 
         private void PayPenalty(int penalty)
@@ -214,18 +218,15 @@ namespace OOP
                     return true;
                 }
 
-                if (TryReplaceDetail(brokenDetails[i], car, out int detailRepairCost))
-                {
-                    _clients.Peek().Pay(detailRepairCost);
-                    Console.WriteLine($"Вы заплатили {detailRepairCost}");
-                    Balanse += detailRepairCost;
-                }
-                else
+                if (TryReplaceDetail(brokenDetails[i], car, out int detailRepairCost) == false)
                 {
                     Console.WriteLine("Деталь не смогли поменять.");
                     PayPenalty(FineAmount * GetBrokenDetails(car).Count);
-                    return true;
+                    return false;
                 }
+
+                Console.WriteLine($"Вы заработали {detailRepairCost}");
+                Balanse += detailRepairCost;
             }
 
             return true;
@@ -258,27 +259,32 @@ namespace OOP
 
             int totalCost = GetDetailRepairCost(serviceableDetail);
 
-            if (_clients.Peek().HasEnoughMoney(totalCost) == false)
+            if (RepairDetail(brokenDetail, car, serviceableDetail) == false)
             {
-                Console.WriteLine("У киента недостаточно денег для замены детали.");
+                Console.WriteLine("Починить деталь не получилось.");
                 return false;
             }
 
-            if(car.TryRemoveDetail(serviceableDetail) == false)
+            detailRepairCost = totalCost;
+            return true;
+        }
+
+        private bool RepairDetail(Detail brokenDetail, Car car, Detail serviceableDetail)
+        {
+            if (car.TryRemoveDetail(serviceableDetail) == false)
             {
                 Console.WriteLine("Деталь не получилось снять.");
                 return false;
             }
 
-            if(car.TryAddDetail(serviceableDetail) == false)
+            if (car.TryAddDetail(serviceableDetail) == false)
             {
                 Console.WriteLine("Деталь не получилось поставить.");
                 car.TryAddDetail(brokenDetail);
                 return false;
             }
 
-            detailRepairCost = totalCost;
-            return true ;
+            return true;
         }
 
         private int GetDetailRepairCost(Detail detail)
@@ -310,36 +316,6 @@ namespace OOP
 
             serviceableDetail = null;
             return false;
-        }
-    }
-
-    class Client
-    {
-        private Car _car;
-
-        public Client(Car car, int money, string name)
-        {
-            _car = car;
-            Money = money;
-            Name = name;
-        }
-
-        public int Money { get; private set; }
-        public string Name { get; private set; }
-
-        public Car GetCar()
-        {
-            return _car;
-        }
-
-        public bool HasEnoughMoney(int money)
-        {
-            return Money >= money;
-        } 
-        
-        public void Pay(int money)
-        {
-            Money -= money;
         }
     }
 
@@ -398,7 +374,7 @@ namespace OOP
 
         private void InitiateClientService()
         {
-            if (_serviceStation.TryServeClient())
+            if (_serviceStation.TryServeCar())
             {
                 Console.WriteLine("Клиент обслужен.");
                 Console.WriteLine($"Баланс: {_serviceStation.Balanse}");
@@ -407,9 +383,9 @@ namespace OOP
 
         private void AddClient()
         {
-            Client client = _serviceStationFabric.CreateClient();
+            Car client = _serviceStationFabric.CreateCar();
 
-            if (_serviceStation.TryAddClient(client))
+            if (_serviceStation.TryAddCar(client))
             {
                 Console.WriteLine("Клиент добавлен.");
             }
@@ -440,9 +416,9 @@ namespace OOP
             return new ServiceStation(CreateClients(), CreateStorage());
         }
 
-        private Queue<Client> CreateClients()
+        private Queue<Car> CreateClients()
         {
-            Queue<Client> clients = new Queue<Client>(new List<Client>());
+            Queue<Car> clients = new Queue<Car>();
 
             int maxClientsCount = 20;
             int minClientsCount = 5;
@@ -451,33 +427,13 @@ namespace OOP
 
             for (int i = 0; i < clientsCount; i++)
             {
-                clients.Enqueue(CreateClient());
+                clients.Enqueue(CreateCar());
             }
 
             return clients;
         }
 
-        public Client CreateClient()
-        {
-            int maxClientMoney = 50000;
-            int minClientMoney = 5000;
-            int clientMoney = UserUtils.GenerateRandomNumber(minClientMoney, maxClientMoney);
-
-            string[] clientsName = new string[]
-            {
-                "Евгений",
-                "Иван",
-                "Владислав",
-                "Владимир",
-                "Илья"
-            };
-
-            int clientNameRandomIndex = UserUtils.GenerateRandomNumber(0, clientsName.Length);
-
-            return new Client(CreateCar(), clientMoney, clientsName[clientNameRandomIndex]);
-        }
-
-        private Car CreateCar()
+        public Car CreateCar()
         {
             string[] brandsName = new string[]
             {
